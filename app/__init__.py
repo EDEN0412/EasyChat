@@ -20,4 +20,7 @@ def create_app(config_class=Config):
     from app.routes import main
     app.register_blueprint(main.bp)
 
+    # モデルの登録
+    from app.models import User, Channel, Message, Reaction, ChannelMember
+
     return app 
