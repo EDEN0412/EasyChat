@@ -1,13 +1,11 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_socketio import SocketIO
 from config import Config
 
 # グローバルなインスタンスの初期化
 db = SQLAlchemy()
 migrate = Migrate()
-socketio = SocketIO()
 
 def create_app(config_class=Config):
     # Flaskアプリケーションの作成
@@ -17,9 +15,8 @@ def create_app(config_class=Config):
     # 拡張機能の初期化
     db.init_app(app)
     migrate.init_app(app, db)
-    socketio.init_app(app)
 
-    # ルートの登録（後で実装）
+    # ルートの登録
     from app.routes import main
     app.register_blueprint(main.bp)
 
