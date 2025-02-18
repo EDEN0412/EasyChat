@@ -1,0 +1,79 @@
+<mxfile host="65bd71144e">
+    <diagram id="chat-app-flow" name="Chat App Screen Flow">
+        <mxGraphModel dx="898" dy="571" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="login-screen" value="ログイン画面&#xa;(/login)" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="40" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="register-screen" value="新規登録画面&#xa;(/register)" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="40" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-screen" value="チャットメイン画面&#xa;(/chat)" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="200" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="channel-modal" value="チャンネル作成&#xa;モーダル" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="170" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="message-modal" value="メッセージ編集&#xa;モーダル" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="270" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="404-screen" value="404 Not Found&#xa;(/404)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="440" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="403-screen" value="403 Forbidden&#xa;(/403)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="440" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="500-screen" value="500 Internal Error&#xa;(/500)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="414" y="440" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="toast-notification" value="トースト通知" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="60" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="websocket-status" value="WebSocket&#xa;接続状態" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="390" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="login-to-register" value="新規登録" style="endArrow=classic;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="login-screen" target="register-screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="register-to-login" value="登録完了" style="endArrow=classic;html=1;exitX=0;exitY=0.75;entryX=1;entryY=0.75;" parent="1" source="register-screen" target="login-screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="login-to-chat" value="ログイン成功" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="login-screen" target="chat-screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-channel" value="チャンネル作成" style="endArrow=classic;html=1;exitX=1;exitY=0.25;entryX=0;entryY=0.5;" parent="1" source="chat-screen" target="channel-modal" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-message" value="メッセージ編集" style="endArrow=classic;html=1;exitX=1;exitY=0.75;entryX=0;entryY=0.5;" parent="1" source="chat-screen" target="message-modal" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-404" value="存在しないページ" style="endArrow=classic;html=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" parent="1" source="chat-screen" target="404-screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-403" value="権限エラー" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="chat-screen" target="403-screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-500" value="サーバーエラー" style="endArrow=classic;html=1;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" parent="1" source="chat-screen" target="500-screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-toast" value="通知発生" style="endArrow=classic;html=1;exitX=1;exitY=0.25;entryX=0;entryY=0.5;" parent="1" source="chat-screen" target="toast-notification" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat-to-websocket" value="接続状態変更" style="endArrow=classic;html=1;exitX=1;exitY=0.75;entryX=0;entryY=0.5;" parent="1" source="chat-screen" target="websocket-status" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="responsive-desktop" value="デスクトップ版 (1024px以上)&#xa;3カラムレイアウト" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="560" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="responsive-tablet" value="タブレット版 (768px-1023px)&#xa;2カラムレイアウト" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="560" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="responsive-mobile" value="モバイル版 (767px以下)&#xa;シングルカラム + ハンバーガーメニュー" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="560" width="200" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
