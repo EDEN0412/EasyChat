@@ -252,6 +252,89 @@
             font-size: 0.8em;
             color: #6c757d;
         }
+
+        /* リアクションのスタイル */
+        .reactions {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .reaction {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .reaction:hover {
+            background-color: #e9ecef;
+        }
+
+        .reaction-own {
+            background-color: #e3f2fd;
+        }
+
+        .reaction-picker {
+            position: relative;
+            margin-left: auto;
+        }
+
+        .reaction-btn-main {
+            background: none;
+            border: none;
+            padding: 4px;
+            font-size: 1.2em;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+        }
+
+        .reaction-btn-main:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .reaction-options {
+            display: none;
+            position: absolute;
+            right: 0;
+            bottom: 100%;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 8px;
+            margin-bottom: 8px;
+            z-index: 100;
+        }
+
+        .reaction-options.show {
+            display: flex;
+            gap: 8px;
+        }
+
+        .reaction-option {
+            background: none;
+            border: none;
+            padding: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .reaction-option:hover {
+            transform: scale(1.2);
+        }
+
+        .message:hover .reaction-btn-main {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>

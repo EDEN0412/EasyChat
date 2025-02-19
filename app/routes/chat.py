@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-from app.models import Message, Channel, User
+from app.models import Message, Channel, User, Reaction
 from app import db, socketio
 from datetime import datetime
+from sqlalchemy import func
 import uuid
 
 bp = Blueprint('chat', __name__)
@@ -19,6 +20,15 @@ def get_or_create_default_channel():
         db.session.commit()
     return default_channel
 
+def format_reactions(message):
+    """メッセージのリアクションを集計してフォーマット"""
+    reactions = db.session.query(
+        Reaction.emoji,
+        func.count(Reaction.user_id).label('count')
+    ).filter_by(message_id=message.id).group_by(Reaction.emoji).all()
+    
+    return [{'emoji': r.emoji, 'count': r.count} for r in reactions]
+
 def format_message(message):
     """メッセージをJSON形式にフォーマット"""
     return {
@@ -27,7 +37,8 @@ def format_message(message):
         'user_id': message.user_id,
         'username': message.author.username,
         'created_at': message.created_at.strftime('%Y-%m-%d %H:%M'),
-        'is_edited': message.is_edited
+        'is_edited': message.is_edited,
+        'reactions': format_reactions(message)
     }
 
 @bp.route('/messages')
@@ -119,4 +130,47 @@ def delete_message(message_id):
     # WebSocketで削除をブロードキャスト
     socketio.emit('delete_message', {'message_id': message_id})
     
-    return redirect(url_for('chat.messages')) 
+    return redirect(url_for('chat.messages'))
+
+@bp.route('/messages/<int:message_id>/react', methods=['POST'])
+def toggle_reaction(message_id):
+    """リアクションの追加/削除"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    emoji = request.json.get('emoji')
+    if not emoji:
+        return jsonify({'error': 'Emoji is required'}), 400
+    
+    # メッセージの存在確認
+    message = Message.query.get_or_404(message_id)
+    
+    # 既存のリアクションを確認
+    existing_reaction = Reaction.query.filter_by(
+        message_id=message_id,
+        user_id=session['user_id'],
+        emoji=emoji
+    ).first()
+    
+    if existing_reaction:
+        # リアクションを削除
+        db.session.delete(existing_reaction)
+    else:
+        # リアクションを追加
+        reaction = Reaction(
+            message_id=message_id,
+            user_id=session['user_id'],
+            emoji=emoji
+        )
+        db.session.add(reaction)
+    
+    db.session.commit()
+    
+    # リアクションの更新をブロードキャスト
+    message_data = format_message(message)
+    socketio.emit('update_reactions', {
+        'message_id': message_id,
+        'reactions': message_data['reactions']
+    })
+    
+    return jsonify(message_data) 

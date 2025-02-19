@@ -17,6 +17,26 @@
             <div class="message-content" id="message-content-{{ message.id }}">
                 {{ message.content }}
             </div>
+            <div class="reactions" id="reactions-{{ message.id }}">
+                {% for reaction in message.reactions %}
+                <span class="reaction" 
+                      data-emoji="{{ reaction.emoji }}" 
+                      data-count="{{ reaction.count }}"
+                      onclick="toggleReaction('{{ message.id }}', '{{ reaction.emoji }}')">
+                    {{ reaction.emoji }} {{ reaction.count }}
+                </span>
+                {% endfor %}
+                <div class="reaction-picker">
+                    <button onclick="toggleReactionPicker('{{ message.id }}')" class="reaction-btn-main" title="リアクションを追加">
+                        <span>😀</span>
+                    </button>
+                    <div class="reaction-options" id="reaction-options-{{ message.id }}">
+                        <button onclick="toggleReaction('{{ message.id }}', '👍')" class="reaction-option" title="いいね">👍</button>
+                        <button onclick="toggleReaction('{{ message.id }}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
+                        <button onclick="toggleReaction('{{ message.id }}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                    </div>
+                </div>
+            </div>
             {% if message.user_id == session.get('user_id') %}
             <div class="message-actions">
                 <button onclick="showEditForm('{{ message.id }}')" class="btn-action" title="編集">✎</button>
@@ -97,6 +117,79 @@ socket.on('delete_message', function(data) {
     }
 });
 
+// リアクション更新時の処理
+socket.on('update_reactions', function(data) {
+    const reactionsContainer = document.getElementById(`reactions-${data.message_id}`);
+    if (reactionsContainer) {
+        updateReactions(reactionsContainer, data.reactions);
+    }
+});
+
+// リアクションの追加/削除
+async function toggleReaction(messageId, emoji) {
+    try {
+        const response = await fetch(`/chat/messages/${messageId}/react`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ emoji: emoji })
+        });
+        
+        if (!response.ok) {
+            throw new Error('リアクションの更新に失敗しました');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// リアクション表示の更新
+function updateReactions(container, reactions) {
+    // リアクションピッカー以外をクリア
+    const reactionPicker = container.querySelector('.reaction-picker');
+    container.innerHTML = '';
+    
+    // 既存のリアクションを表示
+    reactions.forEach(reaction => {
+        const span = document.createElement('span');
+        span.className = 'reaction';
+        span.setAttribute('data-emoji', reaction.emoji);
+        span.setAttribute('data-count', reaction.count);
+        span.onclick = () => toggleReaction(container.id.split('-')[1], reaction.emoji);
+        span.textContent = `${reaction.emoji} ${reaction.count}`;
+        container.appendChild(span);
+    });
+    
+    // リアクションピッカーを再追加
+    container.appendChild(reactionPicker);
+}
+
+// リアクションピッカーの表示/非表示を切り替え
+function toggleReactionPicker(messageId) {
+    const options = document.getElementById(`reaction-options-${messageId}`);
+    const allOptions = document.querySelectorAll('.reaction-options');
+    
+    // 他のリアクションピッカーを閉じる
+    allOptions.forEach(opt => {
+        if (opt.id !== `reaction-options-${messageId}`) {
+            opt.classList.remove('show');
+        }
+    });
+    
+    // クリックされたピッカーの表示を切り替え
+    options.classList.toggle('show');
+}
+
+// ピッカー以外をクリックした時に閉じる
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.reaction-picker')) {
+        document.querySelectorAll('.reaction-options').forEach(opt => {
+            opt.classList.remove('show');
+        });
+    }
+});
+
 // メッセージ要素の作成
 function createMessageElement(message) {
     const div = document.createElement('div');
@@ -113,6 +206,26 @@ function createMessageElement(message) {
         </div>
         <div class="message-content" id="message-content-${message.id}">
             ${message.content}
+        </div>
+        <div class="reactions" id="reactions-${message.id}">
+            ${message.reactions.map(reaction => `
+                <span class="reaction" 
+                      data-emoji="${reaction.emoji}" 
+                      data-count="${reaction.count}"
+                      onclick="toggleReaction('${message.id}', '${reaction.emoji}')">
+                    ${reaction.emoji} ${reaction.count}
+                </span>
+            `).join('')}
+            <div class="reaction-picker">
+                <button onclick="toggleReactionPicker('${message.id}')" class="reaction-btn-main" title="リアクションを追加">
+                    <span>😀</span>
+                </button>
+                <div class="reaction-options" id="reaction-options-${message.id}">
+                    <button onclick="toggleReaction('${message.id}', '👍')" class="reaction-option" title="いいね">👍</button>
+                    <button onclick="toggleReaction('${message.id}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
+                    <button onclick="toggleReaction('${message.id}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                </div>
+            </div>
         </div>
         ${message.user_id === currentUserId ? `
             <div class="message-actions">
