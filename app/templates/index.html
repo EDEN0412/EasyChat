@@ -1,12 +1,13 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyChat</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="welcome-container">
     <h1>EasyChat へようこそ</h1>
     <p>シンプルで使いやすいチャットアプリケーション</p>
-</body>
-</html> 
+    
+    <div class="auth-buttons">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">ログイン</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">新規登録</a>
+    </div>
+</div>
+{% endblock %} 
