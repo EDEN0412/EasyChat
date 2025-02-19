@@ -7,6 +7,30 @@
     <title>EasyChat</title>
     <style>
         /* リセットとベーススタイル */
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-sidebar: #f0f0f0;
+            --bg-message: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #007bff;
+            --hover-color: #0056b3;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #36393f;
+            --bg-secondary: #2f3136;
+            --bg-sidebar: #202225;
+            --bg-message: #40444b;
+            --text-primary: #ffffff;
+            --text-secondary: #dcddde;
+            --border-color: #202225;
+            --accent-color: #7289da;
+            --hover-color: #677bc4;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -17,7 +41,39 @@
             font-family: 'Helvetica Neue', Arial, sans-serif;
             height: 100vh;
             overflow: hidden;
-            background-color: #f5f5f5;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* テーマ切り替えボタン */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-message);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle span {
+            font-size: 20px;
+            line-height: 1;
         }
 
         /* ウェルカムページのスタイル */
@@ -26,18 +82,18 @@
             margin: 60px auto;
             padding: 40px;
             text-align: center;
-            background-color: white;
+            background-color: var(--bg-secondary);
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .welcome-container h1 {
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 20px;
         }
 
         .welcome-container p {
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 30px;
         }
 
@@ -58,12 +114,12 @@
         }
 
         .btn-primary {
-            background-color: #007bff;
+            background-color: var(--accent-color);
             color: white;
         }
 
         .btn-primary:hover {
-            background-color: #0056b3;
+            background-color: var(--hover-color);
         }
 
         .btn-secondary {
@@ -142,20 +198,12 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-        }
-
-        .sidebar {
-            width: 240px;
-            min-width: 240px;
-            background-color: #2f3136;
-            color: #ffffff;
-            height: 100vh;
-            overflow-y: auto;
+            background-color: var(--bg-primary);
         }
 
         .channels-header {
             padding: 16px;
-            background-color: #202225;
+            background-color: var(--bg-sidebar);
             position: sticky;
             top: 0;
             z-index: 1;
@@ -164,7 +212,7 @@
         .channels-header h2 {
             font-size: 16px;
             text-transform: uppercase;
-            color: #8e9297;
+            color: var(--text-secondary);
             margin: 0;
         }
 
@@ -178,36 +226,35 @@
             transition: background-color 0.2s;
         }
 
-        .channel-item:hover {
-            background-color: #36393f;
-        }
-
-        .channel-item.active {
-            background-color: #393c43;
-        }
-
         .channel-item a {
-            color: #8e9297;
+            color: var(--text-secondary);
             text-decoration: none;
             display: block;
             font-size: 14px;
         }
 
+        .channel-item:hover {
+            background-color: var(--bg-message);
+        }
+
+        .channel-item.active {
+            background-color: var(--accent-color);
+        }
+
         .channel-item:hover a {
-            color: #ffffff;
+            color: var(--text-primary);
         }
 
         .channel-item.active a {
-            color: #ffffff;
+            color: var(--text-primary);
             font-weight: 500;
         }
 
-        /* チャットコンテナの調整 */
         .chat-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background-color: #36393f;
+            background-color: var(--bg-primary);
             height: 100vh;
             overflow: hidden;
         }
@@ -219,14 +266,15 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            margin-bottom: 4px;
         }
 
         .message {
             position: relative;
             padding: 12px 16px;
-            background-color: #40444b;
+            background-color: var(--bg-message);
             border-radius: 4px;
-            color: #dcddde;
+            color: var(--text-primary);
             max-width: 95%;
         }
 
@@ -239,38 +287,48 @@
 
         .username {
             font-weight: 500;
-            color: #ffffff;
+            color: var(--text-primary);
         }
 
         .timestamp {
-            color: #8e9297;
+            color: var(--text-secondary);
             font-size: 0.8em;
         }
 
         .message-content {
-            color: #dcddde;
+            color: var(--text-primary);
             line-height: 1.4;
             word-wrap: break-word;
         }
 
         .message-form {
             padding: 20px;
-            background-color: #40444b;
-            border-top: 1px solid #202225;
+            background-color: var(--bg-message);
+            border-top: 2px solid var(--border-color);
+            position: relative;
+            margin-top: auto;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .message-form input[type="text"] {
             width: 100%;
-            padding: 12px;
-            background-color: #40444b;
-            border: 1px solid #202225;
+            padding: 12px 16px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            color: #dcddde;
+            color: var(--text-primary);
             font-size: 14px;
+            padding-right: 60px;
+            transition: border-color 0.2s ease;
+        }
+
+        .message-form input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
         }
 
         .message-form input[type="text"]::placeholder {
-            color: #8e9297;
+            color: var(--text-secondary);
         }
 
         .message-form button {
@@ -280,18 +338,27 @@
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: #dcddde;
+            color: var(--accent-color);
             cursor: pointer;
             padding: 8px;
+            width: auto;
+            transition: color 0.2s ease;
+            font-weight: bold;
+        }
+
+        .message-form button:hover {
+            color: var(--hover-color);
+            background: none;
         }
 
         .form-group {
             position: relative;
+            margin: 0;
         }
 
         /* メッセージ編集・削除のスタイル */
         .message-own {
-            background-color: #34373c;
+            background-color: var(--bg-secondary);
         }
 
         .message-actions {
@@ -328,23 +395,13 @@
         .edit-form {
             margin-top: 8px;
             padding: 8px;
-            background-color: #2f3136;
+            background-color: var(--bg-secondary);
             border-radius: 4px;
-        }
-
-        .edit-form input[type="text"] {
-            width: calc(100% - 160px);
-            padding: 8px;
-            background-color: #40444b;
-            border: 1px solid #202225;
-            border-radius: 4px;
-            color: #dcddde;
-            margin-right: 8px;
         }
 
         .edited-mark {
             font-size: 0.8em;
-            color: #8e9297;
+            color: var(--text-secondary);
         }
 
         /* リアクションのスタイル */
@@ -360,22 +417,22 @@
             display: inline-flex;
             align-items: center;
             padding: 4px 8px;
-            background-color: #2f3136;
+            background-color: var(--bg-secondary);
             border-radius: 12px;
             font-size: 0.9em;
             cursor: pointer;
             transition: background-color 0.2s;
-            color: #b9bbbe;
+            color: var(--text-secondary);
         }
 
         .reaction:hover {
-            background-color: #36393f;
-            color: #dcddde;
+            background-color: var(--bg-message);
+            color: var(--text-primary);
         }
 
         .reaction-own {
-            background-color: #4f545c;
-            color: #ffffff;
+            background-color: var(--accent-color);
+            color: var(--text-primary);
         }
 
         .reaction-picker {
@@ -403,7 +460,7 @@
             position: absolute;
             right: 0;
             bottom: 100%;
-            background-color: #2f3136;
+            background-color: var(--bg-secondary);
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             padding: 8px;
@@ -436,16 +493,16 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #2f3136;
+            background: var(--bg-secondary);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #202225;
+            background: var(--bg-sidebar);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #40444b;
+            background: var(--bg-message);
         }
 
         /* レスポンシブ対応 */
@@ -474,7 +531,33 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="テーマを切り替え">
+        <span class="theme-icon">🌙</span>
+    </button>
     <h1 class="visually-hidden">EasyChat</h1>
     {% block content %}{% endblock %}
+
+    <script>
+        // テーマの初期設定
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeButton(theme);
+
+        // テーマ切り替え関数
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeButton(newTheme);
+        }
+
+        // ボタンの表示を更新
+        function updateThemeButton(theme) {
+            const icon = document.querySelector('.theme-icon');
+            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+    </script>
 </body>
 </html>
