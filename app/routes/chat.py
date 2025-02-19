@@ -4,6 +4,7 @@ from app import db, socketio
 from datetime import datetime
 from sqlalchemy import func
 import uuid
+from flask_login import login_required
 
 bp = Blueprint('chat', __name__)
 
@@ -42,36 +43,50 @@ def format_message(message):
     }
 
 @bp.route('/messages')
-def messages():
+@bp.route('/messages/<channel_id>')
+def messages(channel_id=None):
     # ログインチェック
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     
-    # デフォルトチャンネルの取得または作成
-    default_channel = get_or_create_default_channel()
+    # 全チャンネルを取得
+    channels = Channel.query.order_by(Channel.name).all()
     
-    # メッセージ一覧を取得
-    messages = Message.query.filter_by(channel_id=default_channel.id).order_by(Message.created_at.asc()).all()
-    return render_template('chat/messages.html', messages=messages)
+    # チャンネルIDが指定されていない場合はデフォルトチャンネルを使用
+    if channel_id is None:
+        default_channel = get_or_create_default_channel()
+        return redirect(url_for('chat.messages', channel_id=default_channel.id))
+    
+    # 現在のチャンネルを取得
+    current_channel = Channel.query.get_or_404(channel_id)
+    
+    # チャンネルのメッセージを取得
+    messages = Message.query.filter_by(channel_id=channel_id).order_by(Message.created_at.asc()).all()
+    
+    return render_template('chat/messages.html', 
+                         messages=messages, 
+                         channels=channels,
+                         current_channel=current_channel)
 
 @bp.route('/send', methods=['POST'])
 def send_message():
-    # ログインチェック
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     
     content = request.form.get('message')
+    channel_id = request.form.get('channel_id')
+    
     if not content:
         flash('メッセージを入力してください')
-        return redirect(url_for('chat.messages'))
+        return redirect(url_for('chat.messages', channel_id=channel_id))
     
-    # デフォルトチャンネルの取得
-    default_channel = get_or_create_default_channel()
+    # チャンネルの存在確認
+    channel = Channel.query.get_or_404(channel_id)
     
     # メッセージを保存
     message = Message(
         user_id=session['user_id'],
-        channel_id=default_channel.id,
+        channel_id=channel_id,
         content=content,
         created_at=datetime.utcnow()
     )
@@ -79,9 +94,9 @@ def send_message():
     db.session.commit()
     
     # WebSocketでメッセージをブロードキャスト
-    socketio.emit('new_message', format_message(message))
+    socketio.emit('new_message', format_message(message), room=channel_id)
     
-    return redirect(url_for('chat.messages'))
+    return redirect(url_for('chat.messages', channel_id=channel_id))
 
 @bp.route('/messages/<int:message_id>/edit', methods=['POST'])
 def edit_message(message_id):
