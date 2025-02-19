@@ -189,6 +189,62 @@
         .message-form button {
             width: 80px;
         }
+
+        /* メッセージ編集・削除のスタイル */
+        .message-own {
+            background-color: #e3f2fd;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .btn-action {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-action:hover {
+            background-color: #dee2e6;
+        }
+
+        .btn-delete {
+            color: #dc3545;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-form {
+            display: inline;
+        }
+
+        .edit-form {
+            margin-top: 8px;
+        }
+
+        .edit-form input[type="text"] {
+            width: calc(100% - 160px);
+            padding: 6px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .edited-mark {
+            font-size: 0.8em;
+            color: #6c757d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>

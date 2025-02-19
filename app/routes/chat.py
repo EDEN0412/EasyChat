@@ -56,4 +56,47 @@ def send_message():
     db.session.add(message)
     db.session.commit()
     
+    return redirect(url_for('chat.messages'))
+
+@bp.route('/messages/<int:message_id>/edit', methods=['POST'])
+def edit_message(message_id):
+    # ログインチェック
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    message = Message.query.get_or_404(message_id)
+    
+    # 権限チェック
+    if message.user_id != session['user_id']:
+        flash('他のユーザーのメッセージは編集できません')
+        return redirect(url_for('chat.messages'))
+    
+    content = request.form.get('content')
+    if not content:
+        flash('メッセージを入力してください')
+        return redirect(url_for('chat.messages'))
+    
+    message.content = content
+    message.is_edited = True
+    message.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return redirect(url_for('chat.messages'))
+
+@bp.route('/messages/<int:message_id>/delete', methods=['POST'])
+def delete_message(message_id):
+    # ログインチェック
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    message = Message.query.get_or_404(message_id)
+    
+    # 権限チェック
+    if message.user_id != session['user_id']:
+        flash('他のユーザーのメッセージは削除できません')
+        return redirect(url_for('chat.messages'))
+    
+    db.session.delete(message)
+    db.session.commit()
+    
     return redirect(url_for('chat.messages')) 
