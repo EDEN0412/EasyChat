@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="chat-container">
-    <div class="messages-area">
+    <div class="messages-area" id="messages-area">
         {% for message in messages %}
-        <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}">
+        <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
             <div class="message-header">
                 <span class="username">{{ message.author.username }}</span>
                 <span class="timestamp">
@@ -37,7 +37,7 @@
     </div>
     
     <div class="message-form">
-        <form method="POST" action="{{ url_for('chat.send_message') }}">
+        <form method="POST" action="{{ url_for('chat.send_message') }}" id="message-form">
             <div class="form-group">
                 <input type="text" id="message" name="message" required placeholder="メッセージを入力...">
                 <button type="submit">送信</button>
@@ -46,7 +46,94 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
+const socket = io();
+const messagesArea = document.getElementById('messages-area');
+const messageForm = document.getElementById('message-form');
+const currentUserId = '{{ session.get("user_id") }}';
+
+// メッセージ送信のイベントハンドラ
+messageForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(messageForm);
+    fetch('{{ url_for("chat.send_message") }}', {
+        method: 'POST',
+        body: formData
+    });
+    messageForm.reset();
+});
+
+// 新規メッセージ受信時の処理
+socket.on('new_message', function(message) {
+    const messageElement = createMessageElement(message);
+    messagesArea.appendChild(messageElement);
+    scrollToBottom();
+});
+
+// メッセージ編集時の処理
+socket.on('edit_message', function(message) {
+    const messageElement = document.getElementById(`message-${message.id}`);
+    if (messageElement) {
+        const contentElement = document.getElementById(`message-content-${message.id}`);
+        contentElement.textContent = message.content;
+        
+        // 編集済みマークの更新
+        const timestamp = messageElement.querySelector('.timestamp');
+        if (!timestamp.querySelector('.edited-mark')) {
+            const editedMark = document.createElement('span');
+            editedMark.className = 'edited-mark';
+            editedMark.textContent = '（編集済み）';
+            timestamp.appendChild(editedMark);
+        }
+    }
+});
+
+// メッセージ削除時の処理
+socket.on('delete_message', function(data) {
+    const messageElement = document.getElementById(`message-${data.message_id}`);
+    if (messageElement) {
+        messageElement.remove();
+    }
+});
+
+// メッセージ要素の作成
+function createMessageElement(message) {
+    const div = document.createElement('div');
+    div.className = `message${message.user_id === currentUserId ? ' message-own' : ''}`;
+    div.id = `message-${message.id}`;
+    
+    div.innerHTML = `
+        <div class="message-header">
+            <span class="username">${message.username}</span>
+            <span class="timestamp">
+                ${message.created_at}
+                ${message.is_edited ? '<span class="edited-mark">（編集済み）</span>' : ''}
+            </span>
+        </div>
+        <div class="message-content" id="message-content-${message.id}">
+            ${message.content}
+        </div>
+        ${message.user_id === currentUserId ? `
+            <div class="message-actions">
+                <button onclick="showEditForm('${message.id}')" class="btn-action" title="編集">✎</button>
+                <form action="/chat/messages/${message.id}/delete" method="POST" class="delete-form">
+                    <button type="submit" class="btn-action btn-delete" onclick="return confirm('本当に削除しますか？')" title="削除">✕</button>
+                </form>
+            </div>
+            <div class="edit-form" id="edit-form-${message.id}" style="display: none;">
+                <form action="/chat/messages/${message.id}/edit" method="POST">
+                    <input type="text" name="content" value="${message.content}" required>
+                    <button type="submit" class="btn-action">保存</button>
+                    <button type="button" class="btn-action" onclick="hideEditForm('${message.id}')">キャンセル</button>
+                </form>
+            </div>
+        ` : ''}
+    `;
+    
+    return div;
+}
+
 function showEditForm(messageId) {
     document.getElementById('message-content-' + messageId).style.display = 'none';
     document.getElementById('edit-form-' + messageId).style.display = 'block';
@@ -56,5 +143,12 @@ function hideEditForm(messageId) {
     document.getElementById('message-content-' + messageId).style.display = 'block';
     document.getElementById('edit-form-' + messageId).style.display = 'none';
 }
+
+function scrollToBottom() {
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+// 初期表示時に最下部にスクロール
+scrollToBottom();
 </script>
 {% endblock %} 

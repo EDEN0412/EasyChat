@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from app.models import Message, Channel
-from app import db
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from app.models import Message, Channel, User
+from app import db, socketio
 from datetime import datetime
 import uuid
 
@@ -18,6 +18,17 @@ def get_or_create_default_channel():
         db.session.add(default_channel)
         db.session.commit()
     return default_channel
+
+def format_message(message):
+    """メッセージをJSON形式にフォーマット"""
+    return {
+        'id': message.id,
+        'content': message.content,
+        'user_id': message.user_id,
+        'username': message.author.username,
+        'created_at': message.created_at.strftime('%Y-%m-%d %H:%M'),
+        'is_edited': message.is_edited
+    }
 
 @bp.route('/messages')
 def messages():
@@ -56,6 +67,9 @@ def send_message():
     db.session.add(message)
     db.session.commit()
     
+    # WebSocketでメッセージをブロードキャスト
+    socketio.emit('new_message', format_message(message))
+    
     return redirect(url_for('chat.messages'))
 
 @bp.route('/messages/<int:message_id>/edit', methods=['POST'])
@@ -81,6 +95,9 @@ def edit_message(message_id):
     message.updated_at = datetime.utcnow()
     db.session.commit()
     
+    # WebSocketで編集をブロードキャスト
+    socketio.emit('edit_message', format_message(message))
+    
     return redirect(url_for('chat.messages'))
 
 @bp.route('/messages/<int:message_id>/delete', methods=['POST'])
@@ -98,5 +115,8 @@ def delete_message(message_id):
     
     db.session.delete(message)
     db.session.commit()
+    
+    # WebSocketで削除をブロードキャスト
+    socketio.emit('delete_message', {'message_id': message_id})
     
     return redirect(url_for('chat.messages')) 
