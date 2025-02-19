@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash, session
 from app.auth import create_user, authenticate_user, login_user, logout_user
 
 bp = Blueprint('auth', __name__)
@@ -22,7 +22,9 @@ def register():
         try:
             user = create_user(username, password)
             login_user(user)
-            return redirect(url_for('main.index'))
+            session['user_id'] = user.id
+            session['username'] = user.username
+            return redirect(url_for('chat.messages'))
         except Exception as e:
             flash('ユーザーの作成に失敗しました')
             return render_template('auth/register.html')
@@ -42,7 +44,9 @@ def login():
         user = authenticate_user(username, password)
         if user:
             login_user(user)
-            return redirect(url_for('main.index'))
+            session['user_id'] = user.id
+            session['username'] = user.username
+            return redirect(url_for('chat.messages'))
         
         flash('ユーザー名またはパスワードが正しくありません')
         return render_template('auth/login.html')
@@ -51,5 +55,7 @@ def login():
 
 @bp.route('/logout')
 def logout():
+    session.pop('user_id', None)
+    session.pop('username', None)
     logout_user()
     return redirect(url_for('main.index')) 

@@ -7,11 +7,11 @@ from app import db
 def generate_password_hash(password):
     """パスワードをハッシュ化する"""
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt)
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 def check_password_hash(password, password_hash):
     """パスワードとハッシュを比較する"""
-    return bcrypt.checkpw(password.encode('utf-8'), password_hash)
+    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
 
 def create_user(username, password):
     """新しいユーザーを作成する"""

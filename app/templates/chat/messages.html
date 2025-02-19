@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="messages-area">
+        {% for message in messages %}
+        <div class="message">
+            <div class="message-header">
+                <span class="username">{{ message.author.username }}</span>
+                <span class="timestamp">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            <div class="message-content">
+                {{ message.content }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="message-form">
+        <form method="POST" action="{{ url_for('chat.send_message') }}">
+            <div class="form-group">
+                <input type="text" id="message" name="message" required placeholder="メッセージを入力...">
+                <button type="submit">送信</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

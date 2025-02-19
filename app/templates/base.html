@@ -128,6 +128,67 @@
             background-color: #f8d7da;
             border: 1px solid #f5c6cb;
         }
+
+        /* チャットページのスタイル */
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .messages-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .message-header {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .timestamp {
+            color: #6c757d;
+            margin-left: 10px;
+        }
+
+        .message-content {
+            color: #333;
+        }
+
+        .message-form {
+            padding: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .message-form input[type="text"] {
+            width: calc(100% - 100px);
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .message-form button {
+            width: 80px;
+        }
     </style>
 </head>
 <body>
