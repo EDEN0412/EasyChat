@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="test-errors-container">
+    <h1>エラー画面テスト</h1>
+    <div class="test-buttons">
+        <a href="{{ url_for('main.test_404') }}" class="btn-test">404エラーを表示</a>
+        <a href="{{ url_for('main.test_403') }}" class="btn-test">403エラーを表示</a>
+        <a href="{{ url_for('main.test_500') }}" class="btn-test">500エラーを表示</a>
+    </div>
+</div>
+
+<style>
+.test-errors-container {
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 40px;
+    text-align: center;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.test-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.btn-test {
+    padding: 12px 24px;
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-test:hover {
+    background-color: var(--hover-color);
+}
+</style>
+{% endblock %} 

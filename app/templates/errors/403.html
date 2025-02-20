@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">🔒</div>
+        <h1>アクセス権限がありません</h1>
+        <p>このページを表示する権限がありません。</p>
+        <div class="error-actions">
+            <a href="{{ url_for('auth.login') }}" class="btn-primary">ログイン</a>
+            <a href="{{ url_for('main.index') }}" class="btn-secondary">トップページへ</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

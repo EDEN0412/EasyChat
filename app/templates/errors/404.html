@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">🔍</div>
+        <h1>ページが見つかりません</h1>
+        <p>お探しのページは存在しないか、移動した可能性があります。</p>
+        <div class="error-actions">
+            <a href="{{ url_for('chat.messages') }}" class="btn-primary">チャットに戻る</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

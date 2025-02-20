@@ -736,6 +736,88 @@
         .message-content .mention:hover {
             text-decoration: underline;
         }
+
+        /* エラーページのスタイル */
+        .error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--bg-primary);
+        }
+
+        .error-content {
+            text-align: center;
+            padding: 40px;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .error-content h1 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .error-content p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .error-actions .btn-primary,
+        .error-actions .btn-secondary {
+            padding: 8px 24px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .error-actions .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .error-actions .btn-secondary {
+            background-color: var(--bg-message);
+            color: var(--text-primary);
+        }
+
+        .error-actions .btn-primary:hover {
+            background-color: var(--hover-color);
+        }
+
+        .error-actions .btn-secondary:hover {
+            background-color: var(--bg-sidebar);
+        }
+
+        @media (max-width: 768px) {
+            .error-content {
+                padding: 24px;
+            }
+            
+            .error-icon {
+                font-size: 48px;
+            }
+            
+            .error-content h1 {
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 <body>

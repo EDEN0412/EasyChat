@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">🔧</div>
+        <h1>サーバーエラー</h1>
+        <p>申し訳ありません。一時的な問題が発生しています。</p>
+        <div class="error-actions">
+            <button onclick="location.reload()" class="btn-primary">再読み込み</button>
+            <a href="{{ url_for('main.index') }}" class="btn-secondary">トップページへ</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 
