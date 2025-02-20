@@ -1,13 +1,21 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort
 from app.models import Message, Channel, User, Reaction
 from app import db, socketio
 from datetime import datetime
 from sqlalchemy import func
 import uuid
-from flask_login import login_required
+from functools import wraps
 import re
 
 bp = Blueprint('chat', __name__)
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
 
 def get_or_create_default_channel():
     default_channel = Channel.query.filter_by(name='general').first()
@@ -56,11 +64,8 @@ def format_message(message):
 
 @bp.route('/messages')
 @bp.route('/messages/<channel_id>')
+@login_required
 def messages(channel_id=None):
-    # ログインチェック
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
     # 全チャンネルを取得
     channels = Channel.query.order_by(Channel.name).all()
     
@@ -86,10 +91,8 @@ def messages(channel_id=None):
                          users=users_data)
 
 @bp.route('/send', methods=['POST'])
+@login_required
 def send_message():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
     content = request.form.get('message')
     channel_id = request.form.get('channel_id')
     
@@ -116,11 +119,8 @@ def send_message():
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
 @bp.route('/messages/<int:message_id>/edit', methods=['POST'])
+@login_required
 def edit_message(message_id):
-    # ログインチェック
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
     message = Message.query.get_or_404(message_id)
     
     # 権限チェック
@@ -144,11 +144,8 @@ def edit_message(message_id):
     return redirect(url_for('chat.messages'))
 
 @bp.route('/messages/<int:message_id>/delete', methods=['POST'])
+@login_required
 def delete_message(message_id):
-    # ログインチェック
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
     message = Message.query.get_or_404(message_id)
     
     # 権限チェック
@@ -165,11 +162,8 @@ def delete_message(message_id):
     return redirect(url_for('chat.messages'))
 
 @bp.route('/messages/<int:message_id>/react', methods=['POST'])
+@login_required
 def toggle_reaction(message_id):
-    """リアクションの追加/削除"""
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
     emoji = request.json.get('emoji')
     if not emoji:
         return jsonify({'error': 'Emoji is required'}), 400
@@ -208,10 +202,8 @@ def toggle_reaction(message_id):
     return jsonify(message_data)
 
 @bp.route('/channels/create', methods=['POST'])
+@login_required
 def create_channel():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
     name = request.form.get('name')
     
     # 入力チェック
