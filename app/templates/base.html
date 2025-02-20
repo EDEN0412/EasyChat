@@ -238,6 +238,21 @@
             font-size: 14px;
         }
 
+        .channel-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .channel-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+            opacity: 0.8;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
         .channel-item:hover {
             background-color: var(--bg-message);
         }
@@ -252,7 +267,11 @@
 
         .channel-item.active a {
             color: var(--text-primary);
-            font-weight: 500;
+        }
+
+        .channel-item.active .channel-description {
+            color: var(--text-primary);
+            opacity: 0.9;
         }
 
         .chat-container {
@@ -609,9 +628,27 @@
             color: var(--text-primary);
         }
 
+        .textarea-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background-color: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
         .modal textarea {
             height: 100px;
             resize: vertical;
+            padding-bottom: 32px;
         }
 
         .modal-actions {
