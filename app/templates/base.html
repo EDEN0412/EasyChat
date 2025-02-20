@@ -685,6 +685,57 @@
         .btn-secondary:hover {
             background-color: var(--bg-sidebar);
         }
+
+        /* メッセージフォームのスタイル */
+        .message-form {
+            padding: 20px;
+            background-color: var(--bg-message);
+            border-top: 2px solid var(--border-color);
+            position: relative;
+            margin-top: auto;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .mention-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .mention-suggestions {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .mention-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--text-primary);
+        }
+
+        .mention-item:hover {
+            background-color: var(--bg-message);
+        }
+
+        .message-content .mention {
+            color: var(--accent-color);
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .message-content .mention:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>

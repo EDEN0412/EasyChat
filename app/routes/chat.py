@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import func
 import uuid
 from flask_login import login_required
+import re
 
 bp = Blueprint('chat', __name__)
 
@@ -32,9 +33,20 @@ def format_reactions(message):
 
 def format_message(message):
     """メッセージをJSON形式にフォーマット"""
+    content = message.content
+    # メンションをリンクに変換
+    mentions = re.findall(r'@(\w+)', content)
+    for username in mentions:
+        user = User.query.filter_by(username=username).first()
+        if user:
+            content = content.replace(
+                f'@{username}',
+                f'<a href="#" class="mention">@{username}</a>'
+            )
+    
     return {
         'id': message.id,
-        'content': message.content,
+        'content': content,
         'user_id': message.user_id,
         'username': message.author.username,
         'created_at': message.created_at.strftime('%Y-%m-%d %H:%M'),
@@ -63,10 +75,15 @@ def messages(channel_id=None):
     # チャンネルのメッセージを取得
     messages = Message.query.filter_by(channel_id=channel_id).order_by(Message.created_at.asc()).all()
     
+    # ユーザー一覧を取得（メンション用）
+    users = User.query.all()
+    users_data = [{'id': user.id, 'username': user.username} for user in users]
+    
     return render_template('chat/messages.html', 
                          messages=messages, 
                          channels=channels,
-                         current_channel=current_channel)
+                         current_channel=current_channel,
+                         users=users_data)
 
 @bp.route('/send', methods=['POST'])
 def send_message():

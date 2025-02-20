@@ -79,7 +79,12 @@
             <form method="POST" action="{{ url_for('chat.send_message') }}" id="message-form">
                 <input type="hidden" name="channel_id" value="{{ current_channel.id }}">
                 <div class="form-group">
-                    <input type="text" id="message" name="message" required placeholder="メッセージを入力...">
+                    <div class="mention-container">
+                        <input type="text" id="message" name="message" required 
+                               placeholder="メッセージを入力..." 
+                               onkeyup="handleInput(this)">
+                        <div id="mention-suggestions" class="mention-suggestions"></div>
+                    </div>
                     <button type="submit">送信</button>
                 </div>
             </form>
@@ -256,6 +261,65 @@ function createMessageElement(message) {
     `;
     
     return div;
+}
+
+// メンション機能
+let users = {{ users|tojson|safe }};
+let mentionStart = -1;
+let mentionText = '';
+
+function handleInput(input) {
+    const cursorPos = input.selectionStart;
+    const text = input.value;
+    
+    // @の位置を検索
+    const lastAtPos = text.lastIndexOf('@', cursorPos);
+    
+    if (lastAtPos !== -1 && (lastAtPos === 0 || text[lastAtPos - 1] === ' ')) {
+        mentionStart = lastAtPos;
+        mentionText = text.substring(lastAtPos + 1, cursorPos);
+        showMentionSuggestions(mentionText);
+    } else {
+        hideMentionSuggestions();
+    }
+}
+
+function showMentionSuggestions(query) {
+    const suggestions = users.filter(user => 
+        user.username.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    const suggestionDiv = document.getElementById('mention-suggestions');
+    suggestionDiv.innerHTML = '';
+    
+    if (suggestions.length > 0) {
+        suggestions.forEach(user => {
+            const div = document.createElement('div');
+            div.className = 'mention-item';
+            div.textContent = user.username;
+            div.onclick = () => selectMention(user.username);
+            suggestionDiv.appendChild(div);
+        });
+        suggestionDiv.style.display = 'block';
+    } else {
+        suggestionDiv.style.display = 'none';
+    }
+}
+
+function selectMention(username) {
+    const input = document.getElementById('message');
+    const text = input.value;
+    const newText = text.substring(0, mentionStart) + '@' + username + ' ' + text.substring(input.selectionStart);
+    input.value = newText;
+    hideMentionSuggestions();
+    input.focus();
+}
+
+function hideMentionSuggestions() {
+    const suggestionDiv = document.getElementById('mention-suggestions');
+    suggestionDiv.style.display = 'none';
+    mentionStart = -1;
+    mentionText = '';
 }
 </script>
 {% endblock %}
