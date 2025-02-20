@@ -196,7 +196,6 @@ def create_channel():
         return redirect(url_for('auth.login'))
     
     name = request.form.get('name')
-    description = request.form.get('description', '')
     
     # 入力チェック
     if not name:
@@ -213,7 +212,6 @@ def create_channel():
     channel = Channel(
         id=str(uuid.uuid4()),
         name=name,
-        description=description,
         created_by=session['user_id']
     )
     

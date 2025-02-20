@@ -11,12 +11,9 @@
         </div>
         <div class="channels-list">
             {% for channel in channels %}
-            <div class="channel-item {% if channel.id == current_channel.id %}active{% endif %}" title="{{ channel.description }}">
+            <div class="channel-item {% if channel.id == current_channel.id %}active{% endif %}">
                 <a href="{{ url_for('chat.messages', channel_id=channel.id) }}">
                     <div class="channel-name"># {{ channel.name }}</div>
-                    {% if channel.description %}
-                    <div class="channel-description">{{ channel.description }}</div>
-                    {% endif %}
                 </a>
             </div>
             {% endfor %}
@@ -100,15 +97,6 @@
                 <input type="text" id="channel-name" name="name" required 
                        placeholder="例: general" pattern="[a-zA-Z0-9_-]+" 
                        title="半角英数字、ハイフン、アンダースコアのみ使用可能">
-            </div>
-            <div class="form-group">
-                <label for="channel-description">説明（任意）</label>
-                <div class="textarea-container">
-                    <textarea id="channel-description" name="description" 
-                            maxlength="50" placeholder="チャンネルの説明を入力..."
-                            onkeyup="updateCharCount(this)"></textarea>
-                    <div class="char-count"><span id="char-count">50</span>文字</div>
-                </div>
             </div>
             <div class="modal-actions">
                 <button type="button" onclick="hideCreateChannelModal()" class="btn-secondary">キャンセル</button>
@@ -268,14 +256,6 @@ function createMessageElement(message) {
     `;
     
     return div;
-}
-
-// 文字数カウント機能
-function updateCharCount(textarea) {
-    const maxLength = textarea.maxLength;
-    const currentLength = textarea.value.length;
-    const remaining = maxLength - currentLength;
-    document.getElementById('char-count').textContent = remaining;
 }
 </script>
 {% endblock %}
