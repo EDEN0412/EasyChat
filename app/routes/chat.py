@@ -188,4 +188,41 @@ def toggle_reaction(message_id):
         'reactions': message_data['reactions']
     })
     
-    return jsonify(message_data) 
+    return jsonify(message_data)
+
+@bp.route('/channels/create', methods=['POST'])
+def create_channel():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    name = request.form.get('name')
+    description = request.form.get('description', '')
+    
+    # 入力チェック
+    if not name:
+        flash('チャンネル名は必須です')
+        return redirect(url_for('chat.messages'))
+    
+    # 同名チャンネルのチェック
+    existing_channel = Channel.query.filter_by(name=name).first()
+    if existing_channel:
+        flash('同じ名前のチャンネルが既に存在します')
+        return redirect(url_for('chat.messages'))
+    
+    # チャンネルの作成
+    channel = Channel(
+        id=str(uuid.uuid4()),
+        name=name,
+        description=description,
+        created_by=session['user_id']
+    )
+    
+    try:
+        db.session.add(channel)
+        db.session.commit()
+        flash('チャンネルを作成しました')
+        return redirect(url_for('chat.messages', channel_id=channel.id))
+    except Exception as e:
+        db.session.rollback()
+        flash('チャンネルの作成に失敗しました')
+        return redirect(url_for('chat.messages')) 

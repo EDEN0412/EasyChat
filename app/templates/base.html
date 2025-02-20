@@ -207,6 +207,10 @@
             position: sticky;
             top: 0;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .channels-header h2 {
@@ -214,6 +218,7 @@
             text-transform: uppercase;
             color: var(--text-secondary);
             margin: 0;
+            flex: 1;
         }
 
         .channels-list {
@@ -528,6 +533,121 @@
             white-space: nowrap;
             border: 0;
         }
+
+        /* チャンネル作成ボタンのスタイル */
+        .create-channel-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .create-channel-btn:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-message);
+            transform: scale(1.1);
+        }
+
+        .create-channel-btn span {
+            line-height: 1;
+        }
+
+        /* モーダルのスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .modal .form-group {
+            margin-bottom: 16px;
+        }
+
+        .modal label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .modal input[type="text"],
+        .modal textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-message);
+            color: var(--text-primary);
+        }
+
+        .modal textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-color);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-message);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-sidebar);
+        }
     </style>
 </head>
 <body>
@@ -557,6 +677,25 @@
         function updateThemeButton(theme) {
             const icon = document.querySelector('.theme-icon');
             icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // チャンネル作成モーダルの制御
+        function showCreateChannelModal() {
+            const modal = document.getElementById('create-channel-modal');
+            modal.style.display = 'flex';
+        }
+
+        function hideCreateChannelModal() {
+            const modal = document.getElementById('create-channel-modal');
+            modal.style.display = 'none';
+        }
+
+        // モーダルの外側をクリックした時に閉じる
+        window.onclick = function(event) {
+            const modal = document.getElementById('create-channel-modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
         }
     </script>
 </body>

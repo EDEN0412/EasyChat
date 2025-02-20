@@ -5,6 +5,9 @@
     <div class="sidebar">
         <div class="channels-header">
             <h2>チャンネル一覧</h2>
+            <button onclick="showCreateChannelModal()" class="create-channel-btn" title="新規チャンネル作成">
+                <span>+</span>
+            </button>
         </div>
         <div class="channels-list">
             {% for channel in channels %}
@@ -81,6 +84,30 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- チャンネル作成モーダル -->
+<div id="create-channel-modal" class="modal">
+    <div class="modal-content">
+        <h3>新規チャンネル作成</h3>
+        <form action="{{ url_for('chat.create_channel') }}" method="POST">
+            <div class="form-group">
+                <label for="channel-name">チャンネル名</label>
+                <input type="text" id="channel-name" name="name" required 
+                       placeholder="例: general" pattern="[a-zA-Z0-9_-]+" 
+                       title="半角英数字、ハイフン、アンダースコアのみ使用可能">
+            </div>
+            <div class="form-group">
+                <label for="channel-description">説明（任意）</label>
+                <textarea id="channel-description" name="description" 
+                          placeholder="チャンネルの説明を入力..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" onclick="hideCreateChannelModal()" class="btn-secondary">キャンセル</button>
+                <button type="submit" class="btn-primary">作成</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -186,7 +213,54 @@ function updateReactions(container, reactions) {
 // リアクションピッカーの表示/非表示を切り替え
 function toggleReactionPicker(messageId) {
     const options = document.getElementById(`reaction-options-${messageId}`);
-    options.style.display = options.style.display === 'none' ? 'block' : 'none';
+    options.style.display = options.style.display === 'none' ? 'flex' : 'none';
+}
+
+// メッセージ編集フォームの表示/非表示
+function showEditForm(messageId) {
+    const editForm = document.getElementById(`edit-form-${messageId}`);
+    editForm.style.display = 'block';
+}
+
+function hideEditForm(messageId) {
+    const editForm = document.getElementById(`edit-form-${messageId}`);
+    editForm.style.display = 'none';
+}
+
+// 最下部までスクロール
+function scrollToBottom() {
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+// 新規メッセージ要素の作成
+function createMessageElement(message) {
+    const div = document.createElement('div');
+    div.className = `message ${message.user_id === currentUserId ? 'message-own' : ''}`;
+    div.id = `message-${message.id}`;
+    
+    div.innerHTML = `
+        <div class="message-header">
+            <span class="username">${message.username}</span>
+            <span class="timestamp">${message.created_at}</span>
+        </div>
+        <div class="message-content" id="message-content-${message.id}">
+            ${message.content}
+        </div>
+        <div class="reactions" id="reactions-${message.id}">
+            <div class="reaction-picker">
+                <button onclick="toggleReactionPicker('${message.id}')" class="reaction-btn-main" title="リアクションを追加">
+                    <span>😀</span>
+                </button>
+                <div class="reaction-options" id="reaction-options-${message.id}">
+                    <button onclick="toggleReaction('${message.id}', '👍')" class="reaction-option" title="いいね">👍</button>
+                    <button onclick="toggleReaction('${message.id}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
+                    <button onclick="toggleReaction('${message.id}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return div;
 }
 </script>
 {% endblock %}
