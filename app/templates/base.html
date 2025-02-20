@@ -471,11 +471,18 @@
             cursor: pointer;
             transition: background-color 0.2s;
             color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            user-select: none;
+            transform: translateY(0);
         }
 
         .reaction:hover {
             background-color: var(--bg-message);
             color: var(--text-primary);
+        }
+
+        .reaction:active {
+            transform: translateY(1px);
         }
 
         .reaction-own {
@@ -485,6 +492,7 @@
 
         .reaction-picker {
             margin-left: auto;
+            position: relative;
         }
 
         .reaction-btn-main {
@@ -495,25 +503,30 @@
             cursor: pointer;
             opacity: 0.5;
             transition: all 0.2s;
-            color: #b9bbbe;
+            color: var(--text-secondary);
+            transform: translateY(0);
         }
 
         .reaction-btn-main:hover {
             opacity: 1;
-            transform: scale(1.1);
+        }
+
+        .reaction-btn-main:active {
+            transform: translateY(1px);
         }
 
         .reaction-options {
             display: none;
             position: absolute;
-            right: 0;
             bottom: 100%;
+            right: 0;
             background-color: var(--bg-secondary);
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             padding: 8px;
             margin-bottom: 8px;
             z-index: 100;
+            border: 1px solid var(--border-color);
         }
 
         .reaction-options.show {
@@ -528,11 +541,16 @@
             font-size: 1.2em;
             cursor: pointer;
             transition: transform 0.2s;
-            color: #dcddde;
+            color: var(--text-primary);
+            transform: translateY(0);
         }
 
         .reaction-option:hover {
-            transform: scale(1.2);
+            transform: scale(1.1);
+        }
+
+        .reaction-option:active {
+            transform: translateY(1px) scale(1.1);
         }
 
         /* スクロールバーのカスタマイズ */
