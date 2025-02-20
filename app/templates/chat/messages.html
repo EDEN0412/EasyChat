@@ -21,6 +21,26 @@
     </div>
     
     <div class="chat-container">
+        <div class="account-menu-container">
+            <button class="account-button" onclick="toggleAccountMenu()" title="アカウント設定">
+                <span class="account-icon">👤</span>
+            </button>
+            <div class="account-menu" id="account-menu">
+                <div class="account-menu-header">
+                    <span class="account-name">{{ session.get('username') }}</span>
+                </div>
+                <div class="account-menu-items">
+                    <button class="menu-item" onclick="toggleTheme()">
+                        <span class="theme-icon">🌙</span>
+                        <span class="menu-text">ダーク/ライトモード</span>
+                    </button>
+                    <a href="{{ url_for('auth.logout') }}" class="menu-item menu-item-logout">
+                        <span class="logout-icon">🚪</span>
+                        <span class="menu-text">ログアウト</span>
+                    </a>
+                </div>
+            </div>
+        </div>
         <div class="messages-area" id="messages-area">
             {% for message in messages %}
             <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
@@ -321,5 +341,45 @@ function hideMentionSuggestions() {
     mentionStart = -1;
     mentionText = '';
 }
+
+// アカウントメニューの表示/非表示を切り替え
+function toggleAccountMenu() {
+    const menu = document.getElementById('account-menu');
+    menu.classList.toggle('show');
+}
+
+// メニュー外クリックで閉じる
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('account-menu');
+    const accountButton = document.querySelector('.account-button');
+    
+    if (!menu.contains(event.target) && !accountButton.contains(event.target)) {
+        menu.classList.remove('show');
+    }
+});
+
+// テーマアイコンの更新
+function updateThemeIcon() {
+    const themeIcon = document.querySelector('.theme-icon');
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+}
+
+// 既存のtoggleTheme関数を更新
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon();
+}
+
+// 初期テーマの設定
+document.addEventListener('DOMContentLoaded', function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    updateThemeIcon();
+});
 </script>
 {% endblock %}

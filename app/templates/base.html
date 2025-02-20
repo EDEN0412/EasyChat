@@ -47,6 +47,7 @@
 
         /* テーマ切り替えボタン */
         .theme-toggle {
+            display: none;  /* テーマトグルボタンを非表示にする */
             position: fixed;
             top: 20px;
             right: 20px;
@@ -818,13 +819,108 @@
                 font-size: 20px;
             }
         }
+
+        /* アカウントメニューのスタイル */
+        .account-menu-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .account-button {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .account-button:hover {
+            background-color: var(--bg-message);
+            transform: scale(1.1);
+        }
+
+        .account-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            overflow: hidden;
+        }
+
+        .account-menu.show {
+            display: block;
+        }
+
+        .account-menu-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .account-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .account-menu-items {
+            padding: 8px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .menu-item:hover {
+            background-color: var(--bg-message);
+        }
+
+        .menu-item span {
+            margin-right: 12px;
+        }
+
+        .menu-text {
+            flex: 1;
+        }
+
+        .menu-item-logout {
+            border-top: 1px solid var(--border-color);
+            color: #dc3545;
+        }
+
+        .menu-item-logout:hover {
+            background-color: #dc354510;
+        }
     </style>
 </head>
 <body>
+    <h1 class="visually-hidden">EasyChat</h1>
+    {% if not request.endpoint or not request.endpoint.startswith('chat.messages') %}
     <button class="theme-toggle" onclick="toggleTheme()" title="テーマを切り替え">
         <span class="theme-icon">🌙</span>
     </button>
-    <h1 class="visually-hidden">EasyChat</h1>
+    {% endif %}
     {% block content %}{% endblock %}
 
     <script>
