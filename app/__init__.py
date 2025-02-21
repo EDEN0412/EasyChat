@@ -17,7 +17,10 @@ def create_app(config_class=Config):
     # 拡張機能の初期化
     db.init_app(app)
     migrate.init_app(app, db)
-    socketio.init_app(app, cors_allowed_origins="*")
+    if not app.config.get('SOCKETIO_ENABLED', True):
+        app.wsgi_app = app.wsgi_app
+    else:
+        socketio.init_app(app, cors_allowed_origins="*")
 
     # ルートの登録
     from app.routes import main, auth, chat

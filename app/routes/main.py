@@ -21,5 +21,5 @@ def test_403():
 
 @bp.route('/test-500')
 def test_500():
-    # 意図的にエラーを発生させる
+    """500エラーテスト用のルート"""
     raise Exception("Test 500 error") 
