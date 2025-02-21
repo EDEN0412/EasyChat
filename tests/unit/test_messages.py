@@ -231,4 +231,50 @@ def test_message_reactions(auth_client, test_channel, test_user, app):
         response = auth_client.post(f'/chat/messages/{message.id}/react',
                                json={'emoji': ''},
                                content_type='application/json')
-        assert response.status_code == 400 
+        assert response.status_code == 400
+
+def test_message_mentions(auth_client, test_channel, test_user, app):
+    """メンション機能のテスト"""
+    with app.app_context():
+        # テスト用の別ユーザーを作成
+        mentioned_user = User(
+            id='mentioned-user-id',
+            username='mentioneduser',
+            password_hash='dummy_hash',
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(mentioned_user)
+        db.session.commit()
+
+        # メンション付きメッセージを送信
+        response = auth_client.post('/chat/send', data={
+            'message': 'Hello @mentioneduser!',
+            'channel_id': test_channel
+        }, follow_redirects=True)
+        assert response.status_code == 200
+
+        # メッセージが保存されたことを確認
+        message = Message.query.filter_by(content='Hello @mentioneduser!').first()
+        assert message is not None
+
+        # メッセージ表示時にメンションがリンクに変換されることを確認
+        response = auth_client.get(f'/chat/messages/{test_channel}')
+        assert response.status_code == 200
+        assert '@mentioneduser' in response.get_data(as_text=True)
+
+        # 存在しないユーザーへのメンション
+        response = auth_client.post('/chat/send', data={
+            'message': 'Hello @nonexistentuser!',
+            'channel_id': test_channel
+        }, follow_redirects=True)
+        assert response.status_code == 200
+
+        # 複数のメンションを含むメッセージ
+        response = auth_client.post('/chat/send', data={
+            'message': 'Hello @mentioneduser and @testuser!',
+            'channel_id': test_channel
+        }, follow_redirects=True)
+        assert response.status_code == 200
+        message = Message.query.filter_by(content='Hello @mentioneduser and @testuser!').first()
+        assert message is not None 
