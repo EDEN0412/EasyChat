@@ -24,7 +24,7 @@ class Reaction(db.Model):
     """リアクションモデル"""
     __tablename__ = 'reactions'
 
-    message_id = Column(String(36), ForeignKey('messages.id'), primary_key=True)  # UUIDを格納するために36文字の文字列に変更
+    message_id = Column(String(36), ForeignKey('messages.id', ondelete='CASCADE'), primary_key=True)
     user_id = Column(String(255), ForeignKey('users.id'), primary_key=True)
     emoji = Column(String(10), primary_key=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
