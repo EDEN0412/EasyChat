@@ -164,6 +164,24 @@ def delete_message(message_id):
     flash('メッセージを削除しました')
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
+@bp.route('/messages/<string:message_id>', methods=['DELETE'])
+@login_required
+def delete_message_api(message_id):
+    message = Message.query.get_or_404(message_id)
+    
+    # 権限チェック
+    if message.user_id != session['user_id']:
+        return jsonify({'error': 'Permission denied'}), 403
+    
+    channel_id = message.channel_id
+    db.session.delete(message)
+    db.session.commit()
+    
+    # WebSocketで削除をブロードキャスト
+    socketio.emit('delete_message', {'message_id': message_id})
+    
+    return jsonify({'message': 'Message deleted successfully'})
+
 @bp.route('/messages/<string:message_id>/react', methods=['POST'])
 @login_required
 def toggle_reaction(message_id):
