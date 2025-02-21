@@ -120,8 +120,7 @@
             <div class="form-group">
                 <label for="channel-name">チャンネル名</label>
                 <input type="text" id="channel-name" name="name" required 
-                       placeholder="例: general" pattern="[a-zA-Z0-9_-]+" 
-                       title="半角英数字、ハイフン、アンダースコアのみ使用可能">
+                       placeholder="例: general" minlength="1" maxlength="255">
             </div>
             <div class="modal-actions">
                 <button type="button" onclick="hideCreateChannelModal()" class="btn-secondary">キャンセル</button>

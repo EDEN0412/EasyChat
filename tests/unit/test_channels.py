@@ -104,3 +104,24 @@ def test_channel_listing(auth_client, test_user, app):
         response_text = response.get_data(as_text=True)
         for channel in channels:
             assert channel.name in response_text 
+
+def test_channel_creation_flash_messages(auth_client, test_user, app):
+    """チャンネル作成時のフラッシュメッセージをテスト"""
+    with app.app_context():
+        # 正常系：チャンネル作成成功
+        response = auth_client.post('/chat/channels/create', data={
+            'name': 'new-channel'
+        }, follow_redirects=True)
+        assert 'チャンネルを作成しました' in response.get_data(as_text=True)
+        
+        # 異常系：同名チャンネル作成
+        response = auth_client.post('/chat/channels/create', data={
+            'name': 'new-channel'
+        }, follow_redirects=True)
+        assert '同じ名前のチャンネルが既に存在します' in response.get_data(as_text=True)
+        
+        # 異常系：空名チャンネル作成
+        response = auth_client.post('/chat/channels/create', data={
+            'name': ''
+        }, follow_redirects=True)
+        assert 'チャンネル名は必須です' in response.get_data(as_text=True) 

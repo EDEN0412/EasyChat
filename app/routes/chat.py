@@ -226,31 +226,35 @@ def toggle_reaction(message_id):
 @login_required
 def create_channel():
     name = request.form.get('name')
+    print(f"チャンネル作成リクエスト: name={name}")
     
     # 入力チェック
     if not name:
+        print("エラー: チャンネル名が空です")
         flash('チャンネル名は必須です')
         return redirect(url_for('chat.messages'))
     
     # 同名チャンネルのチェック
     existing_channel = Channel.query.filter_by(name=name).first()
     if existing_channel:
+        print(f"エラー: 同名のチャンネルが存在します: {name}")
         flash('同じ名前のチャンネルが既に存在します')
         return redirect(url_for('chat.messages'))
     
     # チャンネルの作成
-    channel = Channel(
-        id=str(uuid.uuid4()),
-        name=name,
-        created_by=session['user_id']
-    )
-    
     try:
+        channel = Channel(
+            id=str(uuid.uuid4()),
+            name=name,
+            created_by=session['user_id']
+        )
         db.session.add(channel)
         db.session.commit()
+        print(f"チャンネル作成成功: id={channel.id}, name={channel.name}")
         flash('チャンネルを作成しました')
         return redirect(url_for('chat.messages', channel_id=channel.id))
     except Exception as e:
         db.session.rollback()
+        print(f"エラー: チャンネル作成に失敗: {str(e)}")
         flash('チャンネルの作成に失敗しました')
         return redirect(url_for('chat.messages')) 
