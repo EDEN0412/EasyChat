@@ -9,14 +9,12 @@ def app():
     """テスト用のアプリケーションインスタンスを作成"""
     app = create_app()
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     app.config['WTF_CSRF_ENABLED'] = False  # テスト用にCSRF保護を無効化
     
     with app.app_context():
         db.create_all()
         yield app
-        db.session.remove()
-        db.drop_all()
+        db.session.rollback()  # トランザクションをロールバック
 
 @pytest.fixture
 def client(app):

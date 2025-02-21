@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort
 from app.models import Message, Channel, User, Reaction
 from app import db, socketio
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy import func
 import uuid
 from functools import wraps
@@ -105,10 +105,11 @@ def send_message():
     
     # メッセージを保存
     message = Message(
+        id=str(uuid.uuid4()),
         user_id=session['user_id'],
         channel_id=channel_id,
         content=content,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(UTC)
     )
     db.session.add(message)
     db.session.commit()
@@ -118,7 +119,7 @@ def send_message():
     
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
-@bp.route('/messages/<int:message_id>/edit', methods=['POST'])
+@bp.route('/messages/<string:message_id>', methods=['PUT'])
 @login_required
 def edit_message(message_id):
     message = Message.query.get_or_404(message_id)
@@ -126,32 +127,30 @@ def edit_message(message_id):
     # 権限チェック
     if message.user_id != session['user_id']:
         flash('他のユーザーのメッセージは編集できません')
-        return redirect(url_for('chat.messages'))
+        return jsonify({'error': 'Permission denied'}), 403
     
-    content = request.form.get('content')
+    content = request.json.get('content')
     if not content:
-        flash('メッセージを入力してください')
-        return redirect(url_for('chat.messages'))
+        return jsonify({'error': 'Content is required'}), 400
     
     message.content = content
     message.is_edited = True
-    message.updated_at = datetime.utcnow()
+    message.updated_at = datetime.now(UTC)
     db.session.commit()
     
     # WebSocketで編集をブロードキャスト
     socketio.emit('edit_message', format_message(message))
     
-    return redirect(url_for('chat.messages'))
+    return jsonify(format_message(message))
 
-@bp.route('/messages/<int:message_id>/delete', methods=['POST'])
+@bp.route('/messages/<string:message_id>', methods=['DELETE'])
 @login_required
 def delete_message(message_id):
     message = Message.query.get_or_404(message_id)
     
     # 権限チェック
     if message.user_id != session['user_id']:
-        flash('他のユーザーのメッセージは削除できません')
-        return redirect(url_for('chat.messages'))
+        return jsonify({'error': 'Permission denied'}), 403
     
     db.session.delete(message)
     db.session.commit()
@@ -159,9 +158,9 @@ def delete_message(message_id):
     # WebSocketで削除をブロードキャスト
     socketio.emit('delete_message', {'message_id': message_id})
     
-    return redirect(url_for('chat.messages'))
+    return jsonify({'message': 'Message deleted successfully'})
 
-@bp.route('/messages/<int:message_id>/react', methods=['POST'])
+@bp.route('/messages/<string:message_id>/react', methods=['POST'])
 @login_required
 def toggle_reaction(message_id):
     emoji = request.json.get('emoji')
