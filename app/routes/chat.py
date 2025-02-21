@@ -119,17 +119,16 @@ def send_message():
     
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
-@bp.route('/messages/<string:message_id>', methods=['PUT'])
+@bp.route('/messages/<string:message_id>', methods=['PUT', 'POST'])
 @login_required
 def edit_message(message_id):
     message = Message.query.get_or_404(message_id)
     
     # 権限チェック
     if message.user_id != session['user_id']:
-        flash('他のユーザーのメッセージは編集できません')
         return jsonify({'error': 'Permission denied'}), 403
     
-    content = request.json.get('content')
+    content = request.json.get('content') if request.is_json else request.form.get('content')
     if not content:
         return jsonify({'error': 'Content is required'}), 400
     
@@ -141,24 +140,29 @@ def edit_message(message_id):
     # WebSocketで編集をブロードキャスト
     socketio.emit('edit_message', format_message(message))
     
-    return jsonify(format_message(message))
+    if request.is_json:
+        return jsonify(format_message(message))
+    return redirect(url_for('chat.messages', channel_id=message.channel_id))
 
-@bp.route('/messages/<string:message_id>', methods=['DELETE'])
+@bp.route('/messages/<string:message_id>/delete', methods=['POST'])
 @login_required
 def delete_message(message_id):
     message = Message.query.get_or_404(message_id)
     
     # 権限チェック
     if message.user_id != session['user_id']:
-        return jsonify({'error': 'Permission denied'}), 403
+        flash('他のユーザーのメッセージは削除できません')
+        return redirect(url_for('chat.messages', channel_id=message.channel_id))
     
+    channel_id = message.channel_id
     db.session.delete(message)
     db.session.commit()
     
     # WebSocketで削除をブロードキャスト
     socketio.emit('delete_message', {'message_id': message_id})
     
-    return jsonify({'message': 'Message deleted successfully'})
+    flash('メッセージを削除しました')
+    return redirect(url_for('chat.messages', channel_id=channel_id))
 
 @bp.route('/messages/<string:message_id>/react', methods=['POST'])
 @login_required

@@ -79,7 +79,7 @@
                 {% if message.user_id == session.get('user_id') %}
                 <div class="message-actions">
                     <button onclick="showEditForm('{{ message.id }}')" class="btn-action" title="編集">✎</button>
-                    <form action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" class="delete-form">
+                    <form action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" style="display: inline;">
                         <button type="submit" class="btn-action btn-delete" onclick="return confirm('本当に削除しますか？')" title="削除">✕</button>
                     </form>
                 </div>
