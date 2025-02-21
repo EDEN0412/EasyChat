@@ -1,8 +1,8 @@
-"""初期データベース構造の作成
+"""Initial migration
 
-Revision ID: 2cbcda5463ed
+Revision ID: 16414ae1ad8b
 Revises: 
-Create Date: 2025-02-18 20:45:10.267741
+Create Date: 2025-02-21 11:24:33.975065
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '2cbcda5463ed'
+revision = '16414ae1ad8b'
 down_revision = None
 branch_labels = None
 depends_on = None
