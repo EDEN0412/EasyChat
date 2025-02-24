@@ -18,7 +18,7 @@ class Message(db.Model):
     # リレーションシップ
     user = relationship('User', backref='messages')
     channel = relationship('Channel', backref='messages')
-    reactions = relationship('Reaction', backref='message', cascade='all, delete-orphan')
+    reactions = relationship('Reaction', backref='message', cascade='all, delete')
 
 class Reaction(db.Model):
     """リアクションモデル"""

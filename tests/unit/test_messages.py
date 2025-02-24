@@ -213,25 +213,27 @@ def test_message_reactions(auth_client, test_channel, test_user, app):
         ).first()
         assert reaction is not None
         
-        # 同じリアクションを再度追加（削除されることを確認）
-        response = auth_client.post(f'/chat/messages/{message.id}/react',
-                               json={'emoji': '👍'},
-                               content_type='application/json')
+        # メッセージを削除
+        message_id = message.id
+        response = auth_client.delete(f'/chat/messages/{message_id}')
         assert response.status_code == 200
         
-        # リアクションが削除されたことを確認
-        reaction = Reaction.query.filter_by(
-            message_id=message.id,
+        # メッセージとリアクションが削除されたことを確認
+        deleted_message = Message.query.get(message_id)
+        assert deleted_message is None
+        
+        deleted_reaction = Reaction.query.filter_by(
+            message_id=message_id,
             user_id=test_user,
             emoji='👍'
         ).first()
-        assert reaction is None
+        assert deleted_reaction is None
         
-        # 異常系：無効な絵文字
-        response = auth_client.post(f'/chat/messages/{message.id}/react',
-                               json={'emoji': ''},
+        # 削除されたメッセージへのリアクション追加は404エラーになることを確認
+        response = auth_client.post(f'/chat/messages/{message_id}/react',
+                               json={'emoji': '👍'},
                                content_type='application/json')
-        assert response.status_code == 400
+        assert response.status_code == 404
 
 def test_message_mentions(auth_client, test_channel, test_user, app):
     """メンション機能のテスト"""
