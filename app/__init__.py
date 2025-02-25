@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from config import Config
+import traceback
+import sqlalchemy as sa
 
 # グローバルなインスタンスの初期化
 db = SQLAlchemy()
@@ -36,21 +38,31 @@ def create_app(config_class=Config):
             # 接続テスト
             connection = engine.connect()
             print("データベース接続成功")
-            connection.close()
             
             # テーブル一覧を取得
-            tables = db.engine.table_names()
+            inspector = sa.inspect(engine)
+            tables = inspector.get_table_names()
             print(f"データベーステーブル一覧: {tables}")
             
             # usersテーブルが存在するか確認
             if 'users' in tables:
                 print("usersテーブルが存在します")
             else:
-                print("警告: usersテーブルが存在しません")
+                print("警告: usersテーブルが存在しません。テーブルを作成します。")
+                # テーブルを作成
+                from app.models import User, Channel, Message, Reaction, ChannelMember
+                db.create_all()
+                print("テーブルを作成しました")
+                
+                # 再度テーブル一覧を確認
+                tables = inspector.get_table_names()
+                print(f"テーブル作成後のテーブル一覧: {tables}")
+            
+            connection.close()
     except Exception as e:
         print(f"データベース接続エラー: {str(e)}")
-        import traceback
         print(traceback.format_exc())
+        print("アプリケーションは起動しますが、データベース機能が正常に動作しない可能性があります。")
 
     # ルートの登録
     from app.routes import main, auth, chat

@@ -1,56 +1,94 @@
 import uuid
+from datetime import datetime
 import bcrypt
 from flask import session
 from app.models import User
 from app import db
+import traceback
+import sqlalchemy as sa
 
-def generate_password_hash(password):
+def hash_password(password):
     """パスワードをハッシュ化する"""
+    # パスワードをバイト列に変換
+    password_bytes = password.encode('utf-8')
+    # ソルトを生成してハッシュ化
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    # ハッシュ化されたパスワードを文字列として返す
+    return hashed.decode('utf-8')
 
-def check_password_hash(password, password_hash):
-    """パスワードとハッシュを比較する"""
-    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+def check_password(hashed_password, password):
+    """パスワードが正しいかチェックする"""
+    # ハッシュ化されたパスワードとプレーンテキストのパスワードを比較
+    return bcrypt.checkpw(
+        password.encode('utf-8'),
+        hashed_password.encode('utf-8')
+    )
 
 def create_user(username, password):
     """新しいユーザーを作成する"""
-    # ユーザーIDを生成
-    user_id = str(uuid.uuid4())
-    
-    # パスワードをハッシュ化
-    password_hash = generate_password_hash(password)
+    print(f"ユーザー作成を試みます...")
     
     try:
-        # ユーザーを作成
+        # テーブルが存在するか確認
+        engine = db.get_engine()
+        inspector = sa.inspect(engine)
+        tables = inspector.get_table_names()
+        
+        if 'users' not in tables:
+            print("usersテーブルが存在しません。テーブルを作成します。")
+            db.create_all()
+            print("テーブルを作成しました。")
+        
+        # ユーザーIDを生成
+        user_id = str(uuid.uuid4())
+        # パスワードをハッシュ化
+        password_hash = hash_password(password)
+        # 現在時刻を取得
+        now = datetime.utcnow()
+        
+        # ユーザーオブジェクトを作成
         user = User(
             id=user_id,
             username=username,
-            password_hash=password_hash
+            password_hash=password_hash,
+            created_at=now,
+            updated_at=now
         )
         
-        # セッションに追加
+        # データベースに追加
         db.session.add(user)
-        
-        # 明示的にフラッシュしてからコミット
-        db.session.flush()
+        db.session.flush()  # エラーを早期に検出するためにflush
         db.session.commit()
-        
-        print(f"ユーザー作成成功: {user.id}, {user.username}")
+        print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
         return user
     except Exception as e:
-        # エラー発生時はロールバック
-        db.session.rollback()
-        print(f"ユーザー作成エラー（auth.py内）: {str(e)}")
-        import traceback
+        print(f"ユーザー作成エラー: {str(e)}")
         print(traceback.format_exc())
-        raise
+        try:
+            db.session.rollback()
+        except Exception as rollback_error:
+            print(f"ロールバックエラー: {str(rollback_error)}")
+        
+        # テーブルが存在しない場合は作成を試みる
+        if "relation" in str(e) and "does not exist" in str(e):
+            try:
+                print("テーブルが存在しないため、作成を試みます...")
+                db.create_all()
+                print("テーブルを作成しました。再度ユーザー作成を試みてください。")
+            except Exception as create_error:
+                print(f"テーブル作成エラー: {str(create_error)}")
+        
+        return None
+
+def get_user_by_username(username):
+    """ユーザー名からユーザーを取得する"""
+    return User.query.filter_by(username=username).first()
 
 def authenticate_user(username, password):
     """ユーザーを認証する"""
-    user = User.query.filter_by(username=username).first()
-    
-    if user and check_password_hash(password, user.password_hash):
+    user = get_user_by_username(username)
+    if user and check_password(user.password_hash, password):
         return user
     return None
 
