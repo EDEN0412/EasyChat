@@ -16,6 +16,7 @@ def create_app(config_class=Config):
 
     # データベース接続情報をログに出力
     print(f"データベース接続URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"SQLAlchemyプール設定: {app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})}")
     
     # 拡張機能の初期化
     db.init_app(app)
@@ -28,6 +29,15 @@ def create_app(config_class=Config):
     # データベース接続テスト
     try:
         with app.app_context():
+            # 明示的にエンジンを作成してテスト
+            engine = db.get_engine()
+            print(f"データベースエンジン: {engine}")
+            
+            # 接続テスト
+            connection = engine.connect()
+            print("データベース接続成功")
+            connection.close()
+            
             # テーブル一覧を取得
             tables = db.engine.table_names()
             print(f"データベーステーブル一覧: {tables}")

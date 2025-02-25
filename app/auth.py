@@ -21,17 +21,30 @@ def create_user(username, password):
     # パスワードをハッシュ化
     password_hash = generate_password_hash(password)
     
-    # ユーザーを作成
-    user = User(
-        id=user_id,
-        username=username,
-        password_hash=password_hash
-    )
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    return user
+    try:
+        # ユーザーを作成
+        user = User(
+            id=user_id,
+            username=username,
+            password_hash=password_hash
+        )
+        
+        # セッションに追加
+        db.session.add(user)
+        
+        # 明示的にフラッシュしてからコミット
+        db.session.flush()
+        db.session.commit()
+        
+        print(f"ユーザー作成成功: {user.id}, {user.username}")
+        return user
+    except Exception as e:
+        # エラー発生時はロールバック
+        db.session.rollback()
+        print(f"ユーザー作成エラー（auth.py内）: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        raise
 
 def authenticate_user(username, password):
     """ユーザーを認証する"""

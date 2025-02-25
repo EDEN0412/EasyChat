@@ -36,6 +36,15 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
+    # SQLAlchemyのプール設定
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 5,  # 最大接続数を減らす
+        'pool_timeout': 30,  # タイムアウトを増やす
+        'pool_recycle': 1800,  # 接続を30分ごとにリサイクル
+        'max_overflow': 10,  # 最大オーバーフロー接続数
+        'pool_pre_ping': True,  # 接続前にpingを送信して有効性を確認
+    }
+    
     # アプリケーション設定
     APP_PORT = int(os.getenv('APP_PORT', 5000))
 
