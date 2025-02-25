@@ -14,6 +14,9 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # データベース接続情報をログに出力
+    print(f"データベース接続URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    
     # 拡張機能の初期化
     db.init_app(app)
     migrate.init_app(app, db)
@@ -21,6 +24,23 @@ def create_app(config_class=Config):
         app.wsgi_app = app.wsgi_app
     else:
         socketio.init_app(app, cors_allowed_origins="*")
+
+    # データベース接続テスト
+    try:
+        with app.app_context():
+            # テーブル一覧を取得
+            tables = db.engine.table_names()
+            print(f"データベーステーブル一覧: {tables}")
+            
+            # usersテーブルが存在するか確認
+            if 'users' in tables:
+                print("usersテーブルが存在します")
+            else:
+                print("警告: usersテーブルが存在しません")
+    except Exception as e:
+        print(f"データベース接続エラー: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
 
     # ルートの登録
     from app.routes import main, auth, chat
