@@ -1,5 +1,9 @@
-from app import create_app, socketio
 import os
+from flask import Flask
+from flask_socketio import SocketIO
+
+# appパッケージからcreate_app関数とsocketioインスタンスをインポート
+from app import create_app, socketio
 
 # アプリケーションインスタンスを作成
 flask_app = create_app()
