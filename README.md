@@ -211,4 +211,49 @@ http://localhost:5000
    - 使用ポート（デフォルト:5000）が空いているか確認
    - .envファイルで別のポートに変更
 
+## テスト環境のセットアップ
+
+アプリケーションのテストを実行するには、以下の手順に従ってください。
+
+### 1. テスト用データベースの作成
+```bash
+# MySQLでテスト用データベースを作成
+mysql -u root -p
+CREATE DATABASE test_chatapp;
+GRANT ALL PRIVILEGES ON test_chatapp.* TO 'chatapp_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 2. テスト用環境変数の設定
+```bash
+# .env.testファイルの作成
+cp .env.test.sample .env.test
+
+# 必要に応じて設定を編集
+# 特にデータベース接続情報を確認
+```
+
+### 3. テスト用テーブルの作成
+```bash
+# テスト用データベースにテーブルを作成
+python create_test_db.py
+```
+
+### 4. テストの実行
+```bash
+# 全てのユニットテストを実行
+FLASK_ENV=testing PYTHONPATH=$PYTHONPATH:. pytest tests/unit/ -v
+
+# 特定のテストファイルのみ実行
+FLASK_ENV=testing PYTHONPATH=$PYTHONPATH:. pytest tests/unit/test_auth.py -v
+
+# 特定のテスト関数のみ実行
+FLASK_ENV=testing PYTHONPATH=$PYTHONPATH:. pytest tests/unit/test_auth.py::test_user_registration -v
+```
+
+### 注意事項
+- テストはテスト用データベース（test_chatapp）に対して実行されます
+- テスト実行時は`FLASK_ENV=testing`環境変数を設定してください
+- テスト実行後はテストデータベースの内容がリセットされます
+
 

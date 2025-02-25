@@ -9,6 +9,7 @@ ENV/
 
 # 環境変数
 .env
+.env.test
 
 # IDE
 .vscode/

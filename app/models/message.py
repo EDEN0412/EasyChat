@@ -4,7 +4,7 @@ from app import db
 class Message(db.Model):
     __tablename__ = 'messages'
 
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.String(36), primary_key=True)
     channel_id = db.Column(db.String(255), db.ForeignKey('channels.id'), nullable=False)
     user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)

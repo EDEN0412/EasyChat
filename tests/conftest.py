@@ -1,26 +1,46 @@
 import pytest
 from app import create_app, db
-from config import Config
+from config import TestConfig
+import os
+import sys
+from dotenv import load_dotenv
 
-class TestConfig(Config):
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
-    WTF_CSRF_ENABLED = False
-    PROPAGATE_EXCEPTIONS = False
-    SERVER_NAME = 'localhost'
-    SOCKETIO_ENABLED = False
+def pytest_configure(config):
+    """テスト開始前の設定"""
+    # テスト環境であることを明示的に設定
+    os.environ['FLASK_ENV'] = 'testing'
+    
+    # .env.testファイルを明示的に読み込む
+    load_dotenv('.env.test', override=True)
+    print(f"[pytest_configure] Using test database: {os.getenv('MYSQL_DATABASE')}")
+    print(f"[pytest_configure] MYSQL_USER: {os.getenv('MYSQL_USER')}")
+    print(f"[pytest_configure] MYSQL_HOST: {os.getenv('MYSQL_HOST')}")
+    print(f"[pytest_configure] MYSQL_PORT: {os.getenv('MYSQL_PORT')}")
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def app():
     """テスト用のアプリケーションを作成"""
+    # テスト環境であることを明示的に設定
+    os.environ['FLASK_ENV'] = 'testing'
+    
+    # TestConfigを使用してアプリケーションを作成
     app = create_app(TestConfig)
-    app.config['TESTING'] = True
-    app.config['PROPAGATE_EXCEPTIONS'] = False
+    
+    # 使用されるデータベースURIを確認
+    print(f"[app fixture] Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"[app fixture] TESTING: {app.config['TESTING']}")
+    
     with app.app_context():
-        db.create_all()
+        # テスト用データベースの初期化
+        db.drop_all()  # 既存のテーブルを削除
+        db.create_all()  # テーブルを再作成
+        
+        # テーブルが作成されたことを確認
+        tables = db.engine.table_names()
+        print(f"[app fixture] Created tables: {tables}")
+        
         yield app
         db.session.remove()
-        db.drop_all()
 
 @pytest.fixture
 def client(app):
