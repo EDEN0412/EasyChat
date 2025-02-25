@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: easychat
+    env: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_APP
+        value: app.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DB_TYPE
+        value: postgresql
+      - key: POSTGRES_HOST
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_DATABASE
+        sync: false
+      - key: POSTGRES_PORT
+        value: "5432"
+      - key: APP_PORT
+        value: "10000" 

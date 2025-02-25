@@ -17,11 +17,23 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev')
     
     # データベース設定
-    password = os.getenv('MYSQL_PASSWORD')
-    SQLALCHEMY_DATABASE_URI = (
-        f"mysql://{os.getenv('MYSQL_USER')}@"
-        f"{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
-    )
+    password = os.getenv('MYSQL_PASSWORD', '')
+    db_type = os.getenv('DB_TYPE', 'mysql')  # デフォルトはMySQL
+    
+    # データベースURIの構築
+    if db_type == 'postgresql':
+        # PostgreSQL用のURI
+        SQLALCHEMY_DATABASE_URI = (
+            f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@"
+            f"{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT', '5432')}/{os.getenv('POSTGRES_DATABASE')}"
+        )
+    else:
+        # MySQL用のURI
+        SQLALCHEMY_DATABASE_URI = (
+            f"mysql://{os.getenv('MYSQL_USER')}@"
+            f"{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
+        )
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # アプリケーション設定
