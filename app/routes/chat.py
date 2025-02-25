@@ -155,6 +155,11 @@ def delete_message(message_id):
         return redirect(url_for('chat.messages', channel_id=message.channel_id))
     
     channel_id = message.channel_id
+    
+    # 関連するリアクションを先に削除
+    Reaction.query.filter_by(message_id=message_id).delete()
+    
+    # メッセージを削除
     db.session.delete(message)
     db.session.commit()
     
