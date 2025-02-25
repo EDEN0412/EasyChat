@@ -38,11 +38,14 @@ class Config:
     
     # SQLAlchemyのプール設定
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 5,  # 最大接続数を減らす
-        'pool_timeout': 30,  # タイムアウトを増やす
+        'pool_size': 3,  # 最大接続数を減らす
+        'pool_timeout': 60,  # タイムアウトを増やす
         'pool_recycle': 1800,  # 接続を30分ごとにリサイクル
-        'max_overflow': 10,  # 最大オーバーフロー接続数
+        'max_overflow': 2,  # 最大オーバーフロー接続数を減らす
         'pool_pre_ping': True,  # 接続前にpingを送信して有効性を確認
+        'connect_args': {
+            'connect_timeout': 10  # 接続タイムアウトを設定
+        }
     }
     
     # アプリケーション設定

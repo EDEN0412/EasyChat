@@ -6,6 +6,7 @@ from app.models import User
 from app import db
 import traceback
 import sqlalchemy as sa
+from sqlalchemy.exc import SQLAlchemyError
 
 def hash_password(password):
     """パスワードをハッシュ化する"""
@@ -30,16 +31,6 @@ def create_user(username, password):
     print(f"ユーザー作成を試みます...")
     
     try:
-        # テーブルが存在するか確認
-        engine = db.get_engine()
-        inspector = sa.inspect(engine)
-        tables = inspector.get_table_names()
-        
-        if 'users' not in tables:
-            print("usersテーブルが存在しません。テーブルを作成します。")
-            db.create_all()
-            print("テーブルを作成しました。")
-        
         # ユーザーIDを生成
         user_id = str(uuid.uuid4())
         # パスワードをハッシュ化
@@ -58,13 +49,14 @@ def create_user(username, password):
         
         # データベースに追加
         db.session.add(user)
-        db.session.flush()  # エラーを早期に検出するためにflush
         db.session.commit()
         print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
         return user
-    except Exception as e:
-        print(f"ユーザー作成エラー: {str(e)}")
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyエラー: {str(e)}")
         print(traceback.format_exc())
+        
+        # セッションをロールバック
         try:
             db.session.rollback()
         except Exception as rollback_error:
@@ -74,10 +66,22 @@ def create_user(username, password):
         if "relation" in str(e) and "does not exist" in str(e):
             try:
                 print("テーブルが存在しないため、作成を試みます...")
-                db.create_all()
-                print("テーブルを作成しました。再度ユーザー作成を試みてください。")
+                with db.engine.connect() as conn:
+                    conn.execute(sa.text("CREATE TABLE IF NOT EXISTS users (id VARCHAR(255) PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL)"))
+                    conn.commit()
+                print("usersテーブルを作成しました。再度ユーザー作成を試みてください。")
             except Exception as create_error:
                 print(f"テーブル作成エラー: {str(create_error)}")
+        
+        return None
+    except Exception as e:
+        print(f"ユーザー作成エラー: {str(e)}")
+        print(traceback.format_exc())
+        
+        try:
+            db.session.rollback()
+        except Exception as rollback_error:
+            print(f"ロールバックエラー: {str(rollback_error)}")
         
         return None
 
