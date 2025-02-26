@@ -112,9 +112,27 @@ def get_user_by_username(username):
 
 def authenticate_user(username, password):
     """ユーザーを認証する"""
-    user = get_user_by_username(username)
-    if user and check_password(user.password_hash, password):
-        return user
+    try:
+        # 直接SQLを使用してユーザーを取得
+        with db.engine.connect() as conn:
+            result = conn.execute(
+                sa.text('SELECT * FROM users WHERE username = :username'),
+                {'username': username}
+            ).fetchone()
+            
+            if result and check_password(result.password_hash, password):
+                # ユーザーオブジェクトを作成して返す
+                user = User(
+                    id=result.id,
+                    username=result.username,
+                    password_hash=result.password_hash,
+                    created_at=result.created_at,
+                    updated_at=result.updated_at
+                )
+                return user
+    except Exception as e:
+        print(f"認証エラー: {str(e)}")
+        print(traceback.format_exc())
     return None
 
 def login_user(user):
@@ -131,5 +149,24 @@ def get_current_user():
     """現在のログインユーザーを取得する"""
     user_id = session.get('user_id')
     if user_id:
-        return User.query.get(user_id)
+        try:
+            # 直接SQLを使用してユーザーを取得
+            with db.engine.connect() as conn:
+                result = conn.execute(
+                    sa.text('SELECT * FROM users WHERE id = :user_id'),
+                    {'user_id': user_id}
+                ).fetchone()
+                
+                if result:
+                    # ユーザーオブジェクトを作成して返す
+                    return User(
+                        id=result.id,
+                        username=result.username,
+                        password_hash=result.password_hash,
+                        created_at=result.created_at,
+                        updated_at=result.updated_at
+                    )
+        except Exception as e:
+            print(f"ユーザー取得エラー: {str(e)}")
+            print(traceback.format_exc())
     return None 

@@ -21,11 +21,12 @@ def register():
             user = create_user(username, password)
             
             if user:
-                flash('アカウントが作成されました。ログインしてください。')
-                return redirect(url_for('auth.login'))
+                # 作成成功したら直接ログインしてチャットページへ
+                login_user(user)
+                flash('アカウントが作成されました。')
+                return redirect(url_for('chat.messages'))
             else:
                 flash('ユーザーの作成に失敗しました。もう一度お試しください。')
-                # 再度登録ページを表示
                 return render_template('auth/register.html')
         except Exception as e:
             print(f"登録処理中にエラーが発生しました: {str(e)}")
@@ -41,17 +42,20 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
+        print(f"ログイン試行: username={username}")
+        
         if not username or not password:
             flash('ユーザー名とパスワードを入力してください。')
             return render_template('auth/login.html')
         
         user = authenticate_user(username, password)
         if user:
-            session['user_id'] = user.id
-            session['username'] = user.username
-            return redirect(url_for('main.index'))
+            login_user(user)
+            print(f"ログイン成功: user_id={user.id}")
+            return redirect(url_for('chat.messages'))
         else:
             flash('ユーザー名またはパスワードが正しくありません。')
+            return render_template('auth/login.html')
     
     return render_template('auth/login.html')
 
