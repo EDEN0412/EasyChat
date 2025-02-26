@@ -61,19 +61,18 @@ def create_user(username, password):
         )
         
         # データベースに保存
+        db.session.add(user)
         try:
-            db.session.add(user)
+            db.session.flush()  # 先にflushして問題がないか確認
             db.session.commit()
             print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
             return user
-        except Exception as e:
+        except SQLAlchemyError as e:
             db.session.rollback()
-            raise e
+            print(f"データベースエラー: {str(e)}")
+            print(traceback.format_exc())
+            return None
             
-    except SQLAlchemyError as e:
-        print(f"SQLAlchemyエラー: {str(e)}")
-        print(traceback.format_exc())
-        return None
     except Exception as e:
         print(f"ユーザー作成エラー: {str(e)}")
         print(traceback.format_exc())
