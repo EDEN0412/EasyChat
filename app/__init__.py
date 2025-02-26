@@ -9,7 +9,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
 
 # グローバルなインスタンスの初期化
-db = SQLAlchemy()  # エンジンオプションはConfigクラスから取得
+db = SQLAlchemy(session_options={
+    'autocommit': False,
+    'autoflush': False,
+    'expire_on_commit': False
+})
 migrate = Migrate()
 socketio = SocketIO()
 
@@ -33,13 +37,18 @@ def create_app(config_class=Config):
     # データベース接続テスト
     try:
         with app.app_context():
-            # テーブルが存在しない場合は作成
-            db.create_all()
-            print("データベーステーブルの初期化が完了しました")
-            
-            # 接続テスト
-            db.session.execute(sa.text('SELECT 1'))
-            print("データベース接続テスト成功")
+            # セッションを作成
+            session = db.create_scoped_session()
+            try:
+                # テーブルが存在しない場合は作成
+                db.create_all()
+                print("データベーステーブルの初期化が完了しました")
+                
+                # 接続テスト
+                session.execute(sa.text('SELECT 1'))
+                print("データベース接続テスト成功")
+            finally:
+                session.close()
             
     except SQLAlchemyError as e:
         print(f"SQLAlchemyエラー: {str(e)}")
