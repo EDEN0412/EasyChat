@@ -38,13 +38,19 @@ class Config:
     
     # SQLAlchemyのプール設定
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 3,  # 最大接続数を減らす
-        'pool_timeout': 60,  # タイムアウトを増やす
-        'pool_recycle': 1800,  # 接続を30分ごとにリサイクル
-        'max_overflow': 2,  # 最大オーバーフロー接続数を減らす
-        'pool_pre_ping': True,  # 接続前にpingを送信して有効性を確認
+        'pool_size': 5,  # 接続プールのサイズ
+        'pool_timeout': 30,  # 接続タイムアウト（秒）
+        'pool_recycle': 1800,  # 接続を30分でリサイクル
+        'max_overflow': 10,  # 最大オーバーフロー接続数
+        'pool_pre_ping': True,  # 接続前にpingを送信
+        'echo': True,  # SQLログを出力
+        'echo_pool': True,  # プール関連のログを出力
         'connect_args': {
-            'connect_timeout': 10  # 接続タイムアウトを設定
+            'connect_timeout': 10,  # 接続タイムアウト（秒）
+            'keepalives': 1,  # キープアライブを有効化
+            'keepalives_idle': 30,  # アイドル時のキープアライブ間隔（秒）
+            'keepalives_interval': 10,  # キープアライブの送信間隔（秒）
+            'keepalives_count': 5  # キープアライブの再試行回数
         }
     }
     

@@ -6,9 +6,17 @@ from config import Config
 import traceback
 import sqlalchemy as sa
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.pool import QueuePool
 
 # グローバルなインスタンスの初期化
-db = SQLAlchemy()
+db = SQLAlchemy(engine_options={
+    'poolclass': QueuePool,
+    'pool_size': 5,
+    'max_overflow': 10,
+    'pool_timeout': 30,
+    'pool_recycle': 1800,
+    'pool_pre_ping': True
+})
 migrate = Migrate()
 socketio = SocketIO()
 
