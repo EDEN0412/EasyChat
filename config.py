@@ -35,17 +35,14 @@ class Config:
         )
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_COMMIT_ON_TEARDOWN = False  # 明示的なコミットを要求
     
-    # SQLAlchemyのプール設定を最適化
+    # SQLAlchemyのプール設定
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 5,  # プールサイズを小さく保つ
-        'max_overflow': 2,  # オーバーフロー接続を制限
-        'pool_timeout': 30,  # タイムアウトを30秒に設定
-        'pool_recycle': 1800,  # 30分でコネクションをリサイクル
-        'pool_pre_ping': True,  # 接続前にpingを送信
-        'echo': True,  # SQLログを出力
-        'echo_pool': True,  # プール関連のログを出力
+        'pool_size': 10,
+        'max_overflow': 5,
+        'pool_timeout': 10,
+        'pool_recycle': 1800,
+        'pool_pre_ping': True
     }
     
     # アプリケーション設定

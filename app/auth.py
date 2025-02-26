@@ -60,11 +60,15 @@ def create_user(username, password):
             updated_at=now
         )
         
-        # トランザクション内でユーザーを保存
-        with session_scope() as session:
-            session.add(user)
+        # データベースに保存
+        try:
+            db.session.add(user)
+            db.session.commit()
             print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
             return user
+        except Exception as e:
+            db.session.rollback()
+            raise e
             
     except SQLAlchemyError as e:
         print(f"SQLAlchemyエラー: {str(e)}")
@@ -78,8 +82,7 @@ def create_user(username, password):
 def get_user_by_username(username):
     """ユーザー名からユーザーを取得する"""
     try:
-        with session_scope() as session:
-            return session.query(User).filter_by(username=username).first()
+        return User.query.filter_by(username=username).first()
     except Exception:
         return None
 

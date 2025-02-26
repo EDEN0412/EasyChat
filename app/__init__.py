@@ -9,10 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
 
 # グローバルなインスタンスの初期化
-db = SQLAlchemy(session_options={
-    'autocommit': False,
-    'autoflush': False
-})
+db = SQLAlchemy()
 migrate = Migrate()
 socketio = SocketIO()
 
@@ -41,9 +38,9 @@ def create_app(config_class=Config):
             print("データベーステーブルの初期化が完了しました")
             
             # 接続テスト
-            db.session.execute(sa.text('SELECT 1'))
+            result = db.session.execute(sa.text('SELECT 1')).scalar()
+            print(f"データベース接続テスト成功: {result}")
             db.session.commit()
-            print("データベース接続テスト成功")
             
     except SQLAlchemyError as e:
         print(f"SQLAlchemyエラー: {str(e)}")
