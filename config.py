@@ -38,19 +38,24 @@ class Config:
     
     # SQLAlchemyのプール設定
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 5,  # 同時接続数を減らす
-        'max_overflow': 2,  # オーバーフロー接続数を制限
-        'pool_timeout': 30,  # タイムアウトを延長
+        'pool_size': 1,  # シングルワーカーのため1に設定
+        'max_overflow': 0,  # オーバーフローを無効化
+        'pool_timeout': 30,
         'pool_recycle': 1800,
         'pool_pre_ping': True,
-        'connect_args': {
-            'connect_timeout': 10,
-            'keepalives': 1,
-            'keepalives_idle': 30,
-            'keepalives_interval': 10,
-            'keepalives_count': 5
-        }
+        'echo': True,  # SQLログを有効化
+        'echo_pool': True,  # プールのデバッグログを有効化
     }
+    
+    if db_type == 'postgresql':
+        # PostgreSQL固有の設定を追加
+        SQLALCHEMY_ENGINE_OPTIONS.update({
+            'connect_args': {
+                'connect_timeout': 10,
+                'application_name': 'easychat',
+                'options': '-c statement_timeout=10000'
+            }
+        })
     
     # アプリケーション設定
     APP_PORT = int(os.getenv('APP_PORT', 5000))
