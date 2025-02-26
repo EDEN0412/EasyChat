@@ -62,24 +62,41 @@ def create_user(username, password):
         
         # データベースに保存
         try:
-            # 既存のセッションをクリア
-            db.session.remove()
-            
             # 新しいセッションでトランザクションを開始
-            db.session.add(user)
-            db.session.commit()
+            with db.engine.connect() as conn:
+                with conn.begin():
+                    # 既存のユーザー名をチェック
+                    result = conn.execute(
+                        sa.text('SELECT id FROM users WHERE username = :username'),
+                        {'username': username}
+                    ).fetchone()
+                    
+                    if result:
+                        print("ユーザー名が既に使用されています")
+                        return None
+                    
+                    # ユーザーを作成
+                    conn.execute(
+                        sa.text('''
+                            INSERT INTO users (id, username, password_hash, created_at, updated_at)
+                            VALUES (:id, :username, :password_hash, :created_at, :updated_at)
+                        '''),
+                        {
+                            'id': user_id,
+                            'username': username,
+                            'password_hash': password_hash,
+                            'created_at': now,
+                            'updated_at': now
+                        }
+                    )
+            
             print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
             return user
             
         except SQLAlchemyError as e:
             print(f"データベースエラー: {str(e)}")
             print(traceback.format_exc())
-            if 'duplicate key value violates unique constraint' in str(e):
-                print("ユーザー名が既に使用されています")
-            db.session.rollback()
             return None
-        finally:
-            db.session.remove()
             
     except Exception as e:
         print(f"ユーザー作成エラー: {str(e)}")

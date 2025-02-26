@@ -36,13 +36,8 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # SQLAlchemyのプール設定
+    # SQLAlchemyの設定
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 1,  # シングルワーカーのため1に設定
-        'max_overflow': 0,  # オーバーフローを無効化
-        'pool_timeout': 30,
-        'pool_recycle': 1800,
-        'pool_pre_ping': True,
         'echo': True,  # SQLログを有効化
         'echo_pool': True,  # プールのデバッグログを有効化
     }

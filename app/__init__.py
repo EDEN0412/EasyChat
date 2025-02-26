@@ -6,10 +6,10 @@ from config import Config
 import traceback
 import sqlalchemy as sa
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.pool import NullPool
 
 # グローバルなインスタンスの初期化
-db = SQLAlchemy()
+db = SQLAlchemy(engine_options={'poolclass': NullPool})  # プーリングを無効化
 migrate = Migrate()
 socketio = SocketIO()
 
@@ -38,9 +38,9 @@ def create_app(config_class=Config):
             print("データベーステーブルの初期化が完了しました")
             
             # 接続テスト
-            result = db.session.execute(sa.text('SELECT 1')).scalar()
-            print(f"データベース接続テスト成功: {result}")
-            db.session.commit()
+            with db.engine.connect() as conn:
+                result = conn.execute(sa.text('SELECT 1')).scalar()
+                print(f"データベース接続テスト成功: {result}")
             
     except SQLAlchemyError as e:
         print(f"SQLAlchemyエラー: {str(e)}")
