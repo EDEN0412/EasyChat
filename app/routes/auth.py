@@ -13,7 +13,7 @@ def register():
         print(f"登録リクエスト: username={username}")
         
         if not username or not password:
-            flash('ユーザー名とパスワードを入力してください。')
+            flash('ユーザー名とパスワードを入力してください。', 'error')
             return render_template('auth/register.html')
         
         try:
@@ -23,15 +23,15 @@ def register():
             if user:
                 # 作成成功したら直接ログインしてチャットページへ
                 login_user(user)
-                flash('アカウントが作成されました。')
+                flash('アカウントが作成されました。', 'success')
                 return redirect(url_for('chat.messages'))
             else:
-                flash('ユーザーの作成に失敗しました。もう一度お試しください。')
+                flash('ユーザーの作成に失敗しました。もう一度お試しください。', 'error')
                 return render_template('auth/register.html')
         except Exception as e:
             print(f"登録処理中にエラーが発生しました: {str(e)}")
             print(traceback.format_exc())
-            flash('ユーザーの作成に失敗しました。もう一度お試しください。')
+            flash('ユーザーの作成に失敗しました。もう一度お試しください。', 'error')
             return render_template('auth/register.html')
     
     return render_template('auth/register.html')
@@ -45,16 +45,17 @@ def login():
         print(f"ログイン試行: username={username}")
         
         if not username or not password:
-            flash('ユーザー名とパスワードを入力してください。')
+            flash('ユーザー名とパスワードを入力してください。', 'error')
             return render_template('auth/login.html')
         
         user = authenticate_user(username, password)
         if user:
             login_user(user)
             print(f"ログイン成功: user_id={user.id}")
+            flash('ログインしました。', 'success')
             return redirect(url_for('chat.messages'))
         else:
-            flash('ユーザー名またはパスワードが正しくありません。')
+            flash('ユーザー名またはパスワードが正しくありません。', 'error')
             return render_template('auth/login.html')
     
     return render_template('auth/login.html')
@@ -64,5 +65,5 @@ def logout():
     session.pop('user_id', None)
     session.pop('username', None)
     logout_user()
-    flash('ログアウトしました。')
+    flash('ログアウトしました。', 'success')
     return redirect(url_for('main.index')) 
