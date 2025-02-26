@@ -24,4 +24,8 @@ services:
       - key: POSTGRES_PORT
         value: "5432"
       - key: APP_PORT
-        value: "10000" 
+        value: "10000"
+      - key: BASIC_AUTH_USERNAME
+        sync: false
+      - key: BASIC_AUTH_PASSWORD
+        sync: false 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
@@ -7,16 +7,56 @@ import traceback
 import sqlalchemy as sa
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import NullPool
+import os
+from functools import wraps
 
 # グローバルなインスタンスの初期化
 db = SQLAlchemy(engine_options={'poolclass': NullPool})  # プーリングを無効化
 migrate = Migrate()
 socketio = SocketIO()
 
+def check_auth(username, password):
+    """Basic認証のクレデンシャルを確認"""
+    return username == os.getenv('BASIC_AUTH_USERNAME') and password == os.getenv('BASIC_AUTH_PASSWORD')
+
+def authenticate():
+    """Basic認証を要求するレスポンスを返す"""
+    return Response(
+        'Basic認証が必要です。', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'}
+    )
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
 def create_app(config_class=Config):
     # Flaskアプリケーションの作成
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # 環境変数の確認とBasic認証の設定
+    env = os.getenv('FLASK_ENV', 'production')  # デフォルトはproduction
+    print(f"現在の環境: {env}")
+    print(f"Basic認証ユーザー名設定: {os.getenv('BASIC_AUTH_USERNAME')}")
+    print(f"Basic認証パスワード設定: {'設定済み' if os.getenv('BASIC_AUTH_PASSWORD') else '未設定'}")
+
+    # Basic認証の設定
+    if env == 'production' or (os.getenv('BASIC_AUTH_USERNAME') and os.getenv('BASIC_AUTH_PASSWORD')):
+        print(f"Basic認証を有効化します（環境: {env}）")
+        @app.before_request
+        def basic_auth(*args, **kwargs):
+            if request.endpoint != 'static':  # 静的ファイルは認証をスキップ
+                auth = request.authorization
+                if not auth or not check_auth(auth.username, auth.password):
+                    return authenticate()
+    else:
+        print("Basic認証は開発環境で無効です")
 
     # データベース接続情報をログに出力
     print(f"データベース接続URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
