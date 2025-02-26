@@ -12,15 +12,14 @@ from contextlib import contextmanager
 @contextmanager
 def session_scope():
     """トランザクションを管理するコンテキストマネージャー"""
-    session = db.create_scoped_session()
     try:
-        yield session
-        session.commit()
+        yield db.session
+        db.session.commit()
     except Exception:
-        session.rollback()
+        db.session.rollback()
         raise
     finally:
-        session.close()
+        db.session.remove()
 
 def hash_password(password):
     """パスワードをハッシュ化する"""
@@ -61,18 +60,11 @@ def create_user(username, password):
             updated_at=now
         )
         
-        # 新しいセッションでユーザーを保存
-        session = db.create_scoped_session()
-        try:
+        # トランザクション内でユーザーを保存
+        with session_scope() as session:
             session.add(user)
-            session.commit()
             print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
             return user
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
             
     except SQLAlchemyError as e:
         print(f"SQLAlchemyエラー: {str(e)}")
@@ -85,13 +77,11 @@ def create_user(username, password):
 
 def get_user_by_username(username):
     """ユーザー名からユーザーを取得する"""
-    session = db.create_scoped_session()
     try:
-        return session.query(User).filter_by(username=username).first()
+        with session_scope() as session:
+            return session.query(User).filter_by(username=username).first()
     except Exception:
         return None
-    finally:
-        session.close()
 
 def authenticate_user(username, password):
     """ユーザーを認証する"""
