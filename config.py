@@ -36,22 +36,15 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # SQLAlchemyのプール設定
+    # SQLAlchemyのプール設定を最適化
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 5,  # 接続プールのサイズ
-        'pool_timeout': 30,  # 接続タイムアウト（秒）
-        'pool_recycle': 1800,  # 接続を30分でリサイクル
-        'max_overflow': 10,  # 最大オーバーフロー接続数
+        'pool_size': 10,  # 接続プールのサイズを増やす
+        'max_overflow': 20,  # 最大オーバーフロー接続数を増やす
+        'pool_timeout': 60,  # タイムアウトを60秒に延長
+        'pool_recycle': 1800,  # 30分でコネクションをリサイクル
         'pool_pre_ping': True,  # 接続前にpingを送信
         'echo': True,  # SQLログを出力
         'echo_pool': True,  # プール関連のログを出力
-        'connect_args': {
-            'connect_timeout': 10,  # 接続タイムアウト（秒）
-            'keepalives': 1,  # キープアライブを有効化
-            'keepalives_idle': 30,  # アイドル時のキープアライブ間隔（秒）
-            'keepalives_interval': 10,  # キープアライブの送信間隔（秒）
-            'keepalives_count': 5  # キープアライブの再試行回数
-        }
     }
     
     # アプリケーション設定

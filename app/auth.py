@@ -41,7 +41,7 @@ def check_password(hashed_password, password):
 
 def create_user(username, password):
     """新しいユーザーを作成する"""
-    print(f"ユーザー作成を試みます...")
+    print(f"ユーザー作成を試みます: {username}")
     
     try:
         # ユーザーIDを生成
@@ -51,24 +51,17 @@ def create_user(username, password):
         # 現在時刻を取得
         now = datetime.utcnow()
         
-        # トランザクション内でユーザーを作成
+        # ユーザーオブジェクトを作成
+        user = User(
+            id=user_id,
+            username=username,
+            password_hash=password_hash,
+            created_at=now,
+            updated_at=now
+        )
+        
+        # トランザクション内でユーザーを保存
         with session_scope() as session:
-            # テーブルが存在するか確認
-            inspector = sa.inspect(db.engine)
-            if 'users' not in inspector.get_table_names():
-                print("usersテーブルが存在しません。作成します。")
-                db.create_all()
-            
-            # ユーザーオブジェクトを作成
-            user = User(
-                id=user_id,
-                username=username,
-                password_hash=password_hash,
-                created_at=now,
-                updated_at=now
-            )
-            
-            # データベースに追加
             session.add(user)
             print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
             return user
