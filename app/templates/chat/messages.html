@@ -1,6 +1,58 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+.flash-messages {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: auto;
+    max-width: 80%;
+}
+
+.flash-message {
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0; /* 初期状態は非表示 */
+    transition: opacity 0.3s ease-in-out;
+}
+
+.flash-message.show {
+    opacity: 1; /* .showクラスが付いたら表示 */
+}
+
+.flash-message.success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.flash-message.error {
+    background-color: #F44336;
+    color: white;
+}
+
+.flash-message.info {
+    background-color: #2196F3;
+    color: white;
+}
+
+.flash-close {
+    margin-left: 15px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+}
+</style>
+
 <div class="chat-layout">
     <div class="sidebar">
         <div class="channels-header">
@@ -41,6 +93,10 @@
                 </div>
             </div>
         </div>
+        
+        <!-- フラッシュメッセージ表示領域 -->
+        <div id="flash-messages" class="flash-messages"></div>
+        
         <div class="messages-area" id="messages-area">
             {% for message in messages %}
             <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
@@ -165,6 +221,9 @@ messageForm.addEventListener('submit', function(e) {
     .then(data => {
         console.log('メッセージ送信成功:', data.id);
         
+        // フラッシュメッセージを表示
+        showFlashMessage('メッセージを送信しました', 'success');
+        
         // 既に同じIDのメッセージが表示されていないか確認
         if (!document.getElementById(`message-${data.id}`)) {
             // 自分のメッセージを即時表示（WebSocketの受信を待たない）
@@ -180,6 +239,8 @@ messageForm.addEventListener('submit', function(e) {
     })
     .catch(error => {
         console.error('Error:', error);
+        // エラー時もフラッシュメッセージを表示
+        showFlashMessage(error.message, 'error');
         messageInput.disabled = false;
     });
 });
@@ -453,6 +514,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // ページ読み込み時に最下部にスクロール
     scrollToBottom();
 });
+
+// フラッシュメッセージを表示する関数
+function showFlashMessage(message, type = 'success') {
+    const flashMessages = document.getElementById('flash-messages');
+    const messageElement = document.createElement('div');
+    messageElement.className = `flash-message ${type}`;
+    
+    // メッセージコンテンツ
+    const textSpan = document.createElement('span');
+    textSpan.textContent = message;
+    
+    // 要素を追加
+    messageElement.appendChild(textSpan);
+    flashMessages.appendChild(messageElement);
+    
+    // 表示アニメーション (少し遅延させて追加)
+    setTimeout(() => {
+        messageElement.classList.add('show');
+    }, 10);
+    
+    // 3秒後に非表示
+    setTimeout(() => {
+        hideFlashMessage(messageElement);
+    }, 3000);
+}
+
+// フラッシュメッセージを非表示にする関数
+function hideFlashMessage(element) {
+    // フェードアウト
+    element.classList.remove('show');
+    
+    // アニメーション完了後に要素を削除
+    setTimeout(() => {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }, 300); // トランジションの時間と同じ
+}
 
 // WebSocketの接続処理
 socket.on('connect', function() {
