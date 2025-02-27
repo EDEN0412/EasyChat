@@ -97,6 +97,8 @@ def send_message():
     channel_id = request.form.get('channel_id')
     
     if not content:
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'メッセージを入力してください'}), 400
         flash('メッセージを入力してください')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
@@ -115,8 +117,14 @@ def send_message():
     db.session.commit()
     
     # WebSocketでメッセージをブロードキャスト
-    socketio.emit('new_message', format_message(message), room=channel_id)
+    formatted_message = format_message(message)
+    socketio.emit('new_message', formatted_message, room=channel_id)
     
+    # AJAXリクエストの場合はJSONを返す
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(formatted_message)
+    
+    # 通常のフォーム送信の場合はリダイレクト
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
 @bp.route('/messages/<string:message_id>', methods=['PUT', 'POST'])

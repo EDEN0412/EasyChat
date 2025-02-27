@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room, leave_room
 from config import Config
 import traceback
 import sqlalchemy as sa
@@ -14,6 +14,23 @@ from functools import wraps
 db = SQLAlchemy(engine_options={'poolclass': NullPool})  # プーリングを無効化
 migrate = Migrate()
 socketio = SocketIO()
+
+# WebSocketイベントハンドラ
+@socketio.on('join')
+def on_join(data):
+    """チャンネルに参加"""
+    if 'channel_id' in data:
+        room = data['channel_id']
+        join_room(room)
+        print(f"ユーザーがチャンネルに参加: {room}")
+
+@socketio.on('leave')
+def on_leave(data):
+    """チャンネルから退出"""
+    if 'channel_id' in data:
+        room = data['channel_id']
+        leave_room(room)
+        print(f"ユーザーがチャンネルから退出: {room}")
 
 def check_auth(username, password):
     """Basic認証のクレデンシャルを確認"""

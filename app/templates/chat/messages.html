@@ -141,15 +141,63 @@ const currentUserId = '{{ session.get("user_id") }}';
 messageForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(messageForm);
+    const messageInput = document.getElementById('message');
+    const message = messageInput.value.trim();
+    
+    if (!message) return; // 空メッセージは送信しない
+    
+    // 送信中は入力を無効化
+    messageInput.disabled = true;
+    
     fetch('{{ url_for("chat.send_message") }}', {
         method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('メッセージの送信に失敗しました');
+    })
+    .then(data => {
+        console.log('メッセージ送信成功:', data.id);
+        
+        // 既に同じIDのメッセージが表示されていないか確認
+        if (!document.getElementById(`message-${data.id}`)) {
+            // 自分のメッセージを即時表示（WebSocketの受信を待たない）
+            const messageElement = createMessageElement(data);
+            messagesArea.appendChild(messageElement);
+            scrollToBottom();
+        }
+        
+        // フォームをリセットして入力欄にフォーカス
+        messageForm.reset();
+        messageInput.disabled = false;
+        messageInput.focus();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        messageInput.disabled = false;
     });
-    messageForm.reset();
 });
 
 // 新規メッセージ受信時の処理
 socket.on('new_message', function(message) {
+    // 自分が送信したメッセージは既に表示されているので無視
+    if (message.user_id === currentUserId) {
+        console.log('自分のメッセージなので重複表示を防止:', message.id);
+        return;
+    }
+    
+    // 既に同じIDのメッセージが表示されていないか確認
+    if (document.getElementById(`message-${message.id}`)) {
+        console.log('既に表示済みのメッセージ:', message.id);
+        return;
+    }
+    
     const messageElement = createMessageElement(message);
     messagesArea.appendChild(messageElement);
     scrollToBottom();
@@ -257,10 +305,12 @@ function createMessageElement(message) {
     div.className = `message ${message.user_id === currentUserId ? 'message-own' : ''}`;
     div.id = `message-${message.id}`;
     
-    div.innerHTML = `
+    let messageHTML = `
         <div class="message-header">
             <span class="username">${message.username}</span>
-            <span class="timestamp">${message.created_at}</span>
+            <span class="timestamp">${message.created_at}
+                ${message.is_edited ? '<span class="edited-mark">（編集済み）</span>' : ''}
+            </span>
         </div>
         <div class="message-content" id="message-content-${message.id}">
             ${message.content}
@@ -270,7 +320,7 @@ function createMessageElement(message) {
                 <button onclick="toggleReactionPicker('${message.id}')" class="reaction-btn-main" title="リアクションを追加">
                     <span>😀</span>
                 </button>
-                <div class="reaction-options" id="reaction-options-${message.id}">
+                <div class="reaction-options" id="reaction-options-${message.id}" style="display: none;">
                     <button onclick="toggleReaction('${message.id}', '👍')" class="reaction-option" title="いいね">👍</button>
                     <button onclick="toggleReaction('${message.id}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
                     <button onclick="toggleReaction('${message.id}', '😊')" class="reaction-option" title="うれしい">😊</button>
@@ -279,6 +329,26 @@ function createMessageElement(message) {
         </div>
     `;
     
+    // 自分のメッセージの場合は編集・削除ボタンを追加
+    if (message.user_id === currentUserId) {
+        messageHTML += `
+            <div class="message-actions">
+                <button onclick="showEditForm('${message.id}')" class="btn-action" title="編集">✎</button>
+                <form action="/chat/messages/${message.id}/delete" method="POST" style="display: inline;">
+                    <button type="submit" class="btn-action btn-delete" onclick="return confirm('本当に削除しますか？')" title="削除">✕</button>
+                </form>
+            </div>
+            <div class="edit-form" id="edit-form-${message.id}" style="display: none;">
+                <form action="/chat/messages/${message.id}" method="POST">
+                    <input type="text" name="content" value="${message.content}" required>
+                    <button type="submit" class="btn-action">保存</button>
+                    <button type="button" class="btn-action" onclick="hideEditForm('${message.id}')">キャンセル</button>
+                </form>
+            </div>
+        `;
+    }
+    
+    div.innerHTML = messageHTML;
     return div;
 }
 
@@ -379,6 +449,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const theme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
     updateThemeIcon();
+    
+    // ページ読み込み時に最下部にスクロール
+    scrollToBottom();
+});
+
+// WebSocketの接続処理
+socket.on('connect', function() {
+    console.log('Socket.IOに接続しました');
+    // チャンネルに参加
+    socket.emit('join', { channel_id: '{{ current_channel.id }}' });
+});
+
+// 接続エラー処理
+socket.on('connect_error', function(error) {
+    console.error('Socket.IO接続エラー:', error);
+});
+
+// 切断処理
+socket.on('disconnect', function(reason) {
+    console.log('Socket.IOから切断されました:', reason);
 });
 </script>
 {% endblock %}
