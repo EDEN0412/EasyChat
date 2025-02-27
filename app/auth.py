@@ -43,65 +43,53 @@ def create_user(username, password):
     """新しいユーザーを作成する"""
     print(f"ユーザー作成を試みます: {username}")
     
-    try:
-        # ユーザーIDを生成
-        user_id = str(uuid.uuid4())
-        # パスワードをハッシュ化
-        password_hash = hash_password(password)
-        # 現在時刻を取得
-        now = datetime.utcnow()
-        
-        # ユーザーオブジェクトを作成
-        user = User(
-            id=user_id,
-            username=username,
-            password_hash=password_hash,
-            created_at=now,
-            updated_at=now
-        )
-        
-        # データベースに保存
-        try:
-            # 新しいセッションでトランザクションを開始
-            with db.engine.connect() as conn:
-                with conn.begin():
-                    # 既存のユーザー名をチェック
-                    result = conn.execute(
-                        sa.text('SELECT id FROM users WHERE username = :username'),
-                        {'username': username}
-                    ).fetchone()
-                    
-                    if result:
-                        print("ユーザー名が既に使用されています")
-                        return None
-                    
-                    # ユーザーを作成
-                    conn.execute(
-                        sa.text('''
-                            INSERT INTO users (id, username, password_hash, created_at, updated_at)
-                            VALUES (:id, :username, :password_hash, :created_at, :updated_at)
-                        '''),
-                        {
-                            'id': user_id,
-                            'username': username,
-                            'password_hash': password_hash,
-                            'created_at': now,
-                            'updated_at': now
-                        }
-                    )
+    # ユーザーIDを生成
+    user_id = str(uuid.uuid4())
+    # パスワードをハッシュ化
+    password_hash = hash_password(password)
+    # 現在時刻を取得
+    now = datetime.utcnow()
+    
+    # ユーザーオブジェクトを作成
+    user = User(
+        id=user_id,
+        username=username,
+        password_hash=password_hash,
+        created_at=now,
+        updated_at=now
+    )
+    
+    # データベースに保存
+    # 新しいセッションでトランザクションを開始
+    with db.engine.connect() as conn:
+        with conn.begin():
+            # 既存のユーザー名をチェック
+            result = conn.execute(
+                sa.text('SELECT id FROM users WHERE username = :username'),
+                {'username': username}
+            ).fetchone()
             
-            print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
-            return user
+            if result:
+                print("ユーザー名が既に使用されています")
+                raise Exception(f"ユーザー名 '{username}' は既に使用されています")
             
-        except SQLAlchemyError as e:
-            print(f"データベースエラー: {str(e)}")
-            print(traceback.format_exc())
-            return None
-            
-    except Exception as e:
-        print(f"ユーザー作成エラー: {str(e)}")
-        print(traceback.format_exc())
-        return None
+            # ユーザーを作成
+            conn.execute(
+                sa.text('''
+                    INSERT INTO users (id, username, password_hash, created_at, updated_at)
+                    VALUES (:id, :username, :password_hash, :created_at, :updated_at)
+                '''),
+                {
+                    'id': user_id,
+                    'username': username,
+                    'password_hash': password_hash,
+                    'created_at': now,
+                    'updated_at': now
+                }
+            )
+    
+    print(f"ユーザー '{username}' を作成しました。ID: {user_id}")
+    return user
 
 def get_user_by_username(username):
     """ユーザー名からユーザーを取得する"""

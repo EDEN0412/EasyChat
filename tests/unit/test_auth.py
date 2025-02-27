@@ -1,7 +1,7 @@
 import pytest
 from app import create_app, db
 from app.models import User
-from app.auth import create_user, authenticate_user, generate_password_hash
+from app.auth import create_user, authenticate_user, hash_password
 
 @pytest.fixture
 def app():
@@ -54,8 +54,8 @@ def test_password_hashing(app):
     """パスワードハッシュ化のテスト"""
     with app.app_context():
         # 同じパスワードでも異なるハッシュ値が生成されることを確認
-        hash1 = generate_password_hash('password123')
-        hash2 = generate_password_hash('password123')
+        hash1 = hash_password('password123')
+        hash2 = hash_password('password123')
         assert hash1 != hash2
         
         # ハッシュ値がパスワードと一致しないことを確認

@@ -9,11 +9,16 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        password_confirm = request.form.get('password_confirm')
         
         print(f"登録リクエスト: username={username}")
         
         if not username or not password:
-            flash('ユーザー名とパスワードを入力してください', 'error')
+            flash('ユーザー名とパスワードは必須です', 'error')
+            return render_template('auth/register.html')
+        
+        if password != password_confirm:
+            flash('パスワードが一致しません', 'error')
             return render_template('auth/register.html')
         
         try:
@@ -31,7 +36,7 @@ def register():
         except Exception as e:
             print(f"登録処理中にエラーが発生しました: {str(e)}")
             print(traceback.format_exc())
-            flash('ユーザーの作成に失敗しました。もう一度お試しください', 'error')
+            flash(str(e), 'error')
             return render_template('auth/register.html')
     
     return render_template('auth/register.html')
@@ -45,7 +50,7 @@ def login():
         print(f"ログイン試行: username={username}")
         
         if not username or not password:
-            flash('ユーザー名とパスワードを入力してください', 'error')
+            flash('ユーザー名とパスワードは必須です', 'error')
             return render_template('auth/login.html')
         
         user = authenticate_user(username, password)
