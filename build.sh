@@ -8,7 +8,7 @@ pip install -r requirements.txt
 echo "データベースの状態を確認します..."
 python - << EOF
 from app import create_app, db
-from app.models import User, Channel, Message, Reaction, ChannelMember
+from app.models import User, Channel, Message, Reaction
 import sqlalchemy as sa
 
 app = create_app()
@@ -38,7 +38,7 @@ python -m flask db upgrade || echo "マイグレーションの適用に失敗�
 echo "テーブルの存在を再確認します..."
 python - << EOF
 from app import create_app, db
-from app.models import User, Channel, Message, Reaction, ChannelMember
+from app.models import User, Channel, Message, Reaction
 import sqlalchemy as sa
 
 app = create_app()

@@ -36,7 +36,6 @@
             ├──────────────────────────────┤
             │ PK: channel_id VARCHAR(255)  │
             │ name VARCHAR(255) NOT NULL   │
-            │ description TEXT             │
             │ FK: created_by VARCHAR(255)  │
             │ created_at TIMESTAMP         │
             │   DEFAULT CURRENT_TIMESTAMP   │
@@ -46,23 +45,6 @@
             │ Indexes:                     │
             │ - PRIMARY KEY (channel_id)   │
             │ - FK KEY (created_by)        │
-            └──────────────────────────────┘
-
-            ┌──────────────────────────────┐
-            │      ChannelMember           │
-            ├──────────────────────────────┤
-            │ PK,FK: channel_id VARCHAR(255)│
-            │ PK,FK: user_id VARCHAR(255)  │
-            │ joined_at TIMESTAMP          │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │ last_read_at TIMESTAMP       │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (channel_id,   │
-            │   user_id)                   │
-            │ - FK KEY (channel_id)        │
-            │ - FK KEY (user_id)          │
             └──────────────────────────────┘
 
             ┌──────────────────────────────┐
@@ -126,7 +108,5 @@ Relationships:
 - User (1) ---> (n) Message: A user can send multiple messages
 - Message (1) ---> (n) Reaction: A message can have multiple reactions
 - User (1) ---> (n) Reaction: A user can add multiple reactions
-- Channel (1) ---> (n) ChannelMember: A channel can have multiple members
-- User (1) ---> (n) ChannelMember: A user can be a member of multiple channels
 - User (1) ---> (n) Notification: A user can have multiple notifications
 - Message (1) ---> (n) Notification: A message can trigger multiple notifications

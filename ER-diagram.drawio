@@ -26,7 +26,7 @@
         <mxCell id="channel-table" value="Channel" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="320" y="40" width="200" height="160" as="geometry" />
         </mxCell>
-        <mxCell id="channel-fields" value="PK: channel_id VARCHAR(255)&#xa;name VARCHAR(255) NOT NULL&#xa;description TEXT&#xa;FK: created_by VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="channel-table">
+        <mxCell id="channel-fields" value="PK: channel_id VARCHAR(255)&#xa;name VARCHAR(255) NOT NULL&#xa;FK: created_by VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="channel-table">
           <mxGeometry y="30" width="200" height="130" as="geometry" />
         </mxCell>
 
@@ -36,14 +36,6 @@
         </mxCell>
         <mxCell id="message-fields" value="PK: message_id BIGINT&#xa;FK: channel_id VARCHAR(255)&#xa;FK: user_id VARCHAR(255)&#xa;content TEXT NOT NULL&#xa;is_edited BOOLEAN DEFAULT FALSE&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="message-table">
           <mxGeometry y="30" width="200" height="150" as="geometry" />
-        </mxCell>
-
-        <!-- ChannelMember Table -->
-        <mxCell id="member-table" value="ChannelMember" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="600" y="40" width="200" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="member-fields" value="PK,FK: channel_id VARCHAR(255)&#xa;PK,FK: user_id VARCHAR(255)&#xa;joined_at TIMESTAMP&#xa;last_read_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="member-table">
-          <mxGeometry y="30" width="200" height="130" as="geometry" />
         </mxCell>
 
         <!-- Reaction Table -->
@@ -85,11 +77,6 @@
 
         <!-- Message -> Reaction -->
         <mxCell id="message-reaction-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="message-fields" target="reaction-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- Channel -> ChannelMember -->
-        <mxCell id="channel-member-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="channel-fields" target="member-fields">
           <mxGeometry width="100" height="100" relative="1" as="geometry" />
         </mxCell>
 
