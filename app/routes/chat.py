@@ -23,7 +23,6 @@ def get_or_create_default_channel():
         default_channel = Channel(
             id=str(uuid.uuid4()),
             name='general',
-            description='General discussion channel',
             created_by=session['user_id']
         )
         db.session.add(default_channel)

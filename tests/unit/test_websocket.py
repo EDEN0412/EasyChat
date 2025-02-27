@@ -41,7 +41,6 @@ def test_channel(app, test_user):
         channel = Channel(
             id='test-channel-id',
             name='testchannel',
-            description='Test Channel',
             created_by=test_user['id'],
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)

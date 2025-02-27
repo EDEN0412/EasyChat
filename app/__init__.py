@@ -113,7 +113,7 @@ def create_app(config_class=Config):
     app.register_blueprint(chat.bp, url_prefix='/chat')
 
     # モデルの登録
-    from app.models import User, Channel, Message, Reaction, ChannelMember
+    from app.models import User, Channel, Message, Reaction
 
     # エラーハンドラーの登録
     @app.errorhandler(404)

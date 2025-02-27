@@ -12,7 +12,7 @@ class User(db.Model):
 
     # リレーションシップ
     messages = db.relationship('Message', backref='author', lazy='dynamic')
-    channels = db.relationship('Channel', secondary='channel_members', backref=db.backref('members', lazy='dynamic'))
+    channels = db.relationship('Channel', backref=db.backref('created_by_user', lazy='joined'), primaryjoin="User.id==Channel.created_by", foreign_keys="Channel.created_by")
 
     def __repr__(self):
         return f'<User {self.username}>' 

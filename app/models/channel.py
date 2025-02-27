@@ -6,7 +6,6 @@ class Channel(db.Model):
 
     id = db.Column(db.String(255), primary_key=True)
     name = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.Text)
     created_by = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
