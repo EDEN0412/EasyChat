@@ -1,91 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="Mozilla/5.0" version="21.1.1" type="device">
-  <diagram id="chat-app-er" name="Chat App ER Diagram">
-    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        
-        <!-- User Table -->
-        <mxCell id="user-table" value="User" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="200" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="user-fields" value="PK: user_id VARCHAR(255)&#xa;username VARCHAR(255) UNIQUE&#xa;password_hash VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="user-table">
-          <mxGeometry y="30" width="200" height="130" as="geometry" />
-        </mxCell>
-
-        <!-- User_Session Table -->
-        <mxCell id="session-table" value="User_Session" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="240" width="200" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="session-fields" value="PK: session_id VARCHAR(255)&#xa;FK: user_id VARCHAR(255)&#xa;session_token VARCHAR(255)&#xa;expires_at TIMESTAMP&#xa;created_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="session-table">
-          <mxGeometry y="30" width="200" height="130" as="geometry" />
-        </mxCell>
-
-        <!-- Channel Table -->
-        <mxCell id="channel-table" value="Channel" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="320" y="40" width="200" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="channel-fields" value="PK: channel_id VARCHAR(255)&#xa;name VARCHAR(255) NOT NULL&#xa;FK: created_by VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="channel-table">
-          <mxGeometry y="30" width="200" height="130" as="geometry" />
-        </mxCell>
-
-        <!-- Message Table -->
-        <mxCell id="message-table" value="Message" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="320" y="240" width="200" height="180" as="geometry" />
-        </mxCell>
-        <mxCell id="message-fields" value="PK: message_id BIGINT&#xa;FK: channel_id VARCHAR(255)&#xa;FK: user_id VARCHAR(255)&#xa;content TEXT NOT NULL&#xa;is_edited BOOLEAN DEFAULT FALSE&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="message-table">
-          <mxGeometry y="30" width="200" height="150" as="geometry" />
-        </mxCell>
-
-        <!-- Reaction Table -->
-        <mxCell id="reaction-table" value="Reaction" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="600" y="240" width="200" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="reaction-fields" value="PK,FK: message_id BIGINT&#xa;PK,FK: user_id VARCHAR(255)&#xa;PK: emoji VARCHAR(10)&#xa;created_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="reaction-table">
-          <mxGeometry y="30" width="200" height="130" as="geometry" />
-        </mxCell>
-
-        <!-- Notification Table -->
-        <mxCell id="notification-table" value="Notification" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="320" y="440" width="200" height="180" as="geometry" />
-        </mxCell>
-        <mxCell id="notification-fields" value="PK: notification_id BIGINT&#xa;FK: user_id VARCHAR(255)&#xa;FK: message_id BIGINT&#xa;type ENUM('mention',&#xa;'new_message','user_presence')&#xa;is_read BOOLEAN DEFAULT FALSE&#xa;created_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="notification-table">
-          <mxGeometry y="30" width="200" height="150" as="geometry" />
-        </mxCell>
-
-        <!-- Relationships -->
-        <!-- User -> User_Session -->
-        <mxCell id="user-session-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="user-fields" target="session-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- User -> Channel -->
-        <mxCell id="user-channel-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="user-fields" target="channel-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- Channel -> Message -->
-        <mxCell id="channel-message-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="channel-fields" target="message-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- User -> Message -->
-        <mxCell id="user-message-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="user-fields" target="message-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- Message -> Reaction -->
-        <mxCell id="message-reaction-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="message-fields" target="reaction-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- User -> Notification -->
-        <mxCell id="user-notification-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" edge="1" parent="1" source="user-fields" target="notification-fields">
-          <mxGeometry width="100" height="100" relative="1" as="geometry" />
-        </mxCell>
-
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="chat-app-er" name="Chat App ER Diagram">
+        <mxGraphModel dx="628" dy="578" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="user-table" value="User" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="40" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="user-fields" value="PK: user_id VARCHAR(255)&#xa;username VARCHAR(255) UNIQUE&#xa;password_hash VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="user-table" vertex="1">
+                    <mxGeometry y="30" width="200" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="channel-table" value="Channel" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="40" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="channel-fields" value="PK: channel_id VARCHAR(255)&#xa;name VARCHAR(255) NOT NULL&#xa;FK: created_by VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="channel-table" vertex="1">
+                    <mxGeometry y="30" width="200" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="message-table" value="Message" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="240" width="200" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="message-fields" value="PK: message_id BIGINT&#xa;FK: channel_id VARCHAR(255)&#xa;FK: user_id VARCHAR(255)&#xa;content TEXT NOT NULL&#xa;is_edited BOOLEAN DEFAULT FALSE&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="message-table" vertex="1">
+                    <mxGeometry y="30" width="200" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="reaction-table" value="Reaction" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="240" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="reaction-fields" value="PK,FK: message_id BIGINT&#xa;PK,FK: user_id VARCHAR(255)&#xa;PK: emoji VARCHAR(10)&#xa;created_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="reaction-table" vertex="1">
+                    <mxGeometry y="30" width="200" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="user-channel-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" parent="1" source="user-fields" target="channel-fields" edge="1">
+                    <mxGeometry width="100" height="100" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="channel-message-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" parent="1" source="channel-fields" target="message-fields" edge="1">
+                    <mxGeometry width="100" height="100" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="user-message-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" parent="1" source="user-fields" target="message-fields" edge="1">
+                    <mxGeometry width="100" height="100" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="message-reaction-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" parent="1" source="message-fields" target="reaction-fields" edge="1">
+                    <mxGeometry width="100" height="100" relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

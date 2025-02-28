@@ -17,21 +17,6 @@
             └──────────────────────────────┘
 
             ┌──────────────────────────────┐
-            │       User_Session           │
-            ├──────────────────────────────┤
-            │ PK: session_id VARCHAR(255)  │
-            │ FK: user_id VARCHAR(255)     │
-            │ session_token VARCHAR(255)    │
-            │ expires_at TIMESTAMP         │
-            │ created_at TIMESTAMP         │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (session_id)   │
-            │ - FK KEY (user_id)          │
-            └──────────────────────────────┘
-
-            ┌──────────────────────────────┐
             │        Channel               │
             ├──────────────────────────────┤
             │ PK: channel_id VARCHAR(255)  │
@@ -82,31 +67,9 @@
             │ - FK KEY (user_id)          │
             └──────────────────────────────┘
 
-            ┌──────────────────────────────┐
-            │      Notification            │
-            ├──────────────────────────────┤
-            │ PK: notification_id BIGINT   │
-            │ FK: user_id VARCHAR(255)     │
-            │ FK: message_id BIGINT        │
-            │ type ENUM('mention',         │
-            │   'new_message',             │
-            │   'user_presence')           │
-            │ is_read BOOLEAN DEFAULT FALSE│
-            │ created_at TIMESTAMP         │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (notification_id)│
-            │ - FK KEY (user_id)          │
-            │ - FK KEY (message_id)        │
-            └──────────────────────────────┘
-
 Relationships:
-- User (1) ---> (n) User_Session: A user can have multiple sessions
 - User (1) ---> (n) Channel: A user can create multiple channels
 - Channel (1) ---> (n) Message: A channel can have multiple messages
 - User (1) ---> (n) Message: A user can send multiple messages
 - Message (1) ---> (n) Reaction: A message can have multiple reactions
 - User (1) ---> (n) Reaction: A user can add multiple reactions
-- User (1) ---> (n) Notification: A user can have multiple notifications
-- Message (1) ---> (n) Notification: A message can trigger multiple notifications
