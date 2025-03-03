@@ -84,15 +84,15 @@ def test_send_message(auth_client, test_channel, app):
         }, follow_redirects=True)
         assert b'message' in response.data.lower()
 
-def test_edit_message(auth_client, test_channel, test_user, app):
+def test_edit_message(auth_client, test_user, test_channel, app):
     """メッセージ編集のテスト"""
     with app.app_context():
-        # メッセージを作成
+        # テスト用メッセージを作成
         message = Message(
-            id=str(uuid.uuid4()),
-            content='Test message',
-            channel_id=test_channel,
+            id='test-message-id',
+            content='元のメッセージ',
             user_id=test_user,
+            channel_id=test_channel,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
@@ -100,51 +100,76 @@ def test_edit_message(auth_client, test_channel, test_user, app):
         db.session.commit()
         
         # メッセージを編集
-        response = auth_client.put(f'/chat/messages/{message.id}', json={
-            'content': 'Edited message'
-        })
+        response = auth_client.post(f'/chat/messages/{message.id}/edit', data={
+            'content': '編集後のメッセージ'
+        }, follow_redirects=True)
+        
         assert response.status_code == 200
+        assert 'メッセージを編集しました' in response.get_data(as_text=True)
         
-        # 編集されたメッセージを確認
-        edited_message = db.session.get(Message, message.id)
-        assert edited_message.content == 'Edited message'
-        assert edited_message.is_edited == True
-        
-        # 異常系：他のユーザーのメッセージを編集
+        # メッセージが更新されたか確認
+        updated_message = Message.query.get(message.id)
+        assert updated_message.content == '編集後のメッセージ'
+        assert updated_message.is_edited == True
+
+def test_edit_message_unauthorized(auth_client, app):
+    """他のユーザーのメッセージを編集しようとしたときのテスト"""
+    with app.app_context():
+        # 別のユーザーを作成
         other_user = User(
             id='other-user-id',
-            username='otheruser',
+            username='other_user',
             password_hash='dummy_hash',
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
         db.session.add(other_user)
-        other_message = Message(
-            id=str(uuid.uuid4()),
-            channel_id=test_channel,
-            user_id=other_user.id,
-            content='Other user message',
+        db.session.commit()
+        
+        # チャンネルを作成
+        channel = Channel(
+            id='test-channel-id',
+            name='テストチャンネル',
+            created_by=other_user.id,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
-        db.session.add(other_message)
+        db.session.add(channel)
         db.session.commit()
         
-        response = auth_client.put(f'/chat/messages/{other_message.id}', json={
-            'content': 'Try to edit'
-        })
-        assert response.status_code == 403
-        assert b'permission denied' in response.data.lower()
+        # 他のユーザーのメッセージを作成
+        message = Message(
+            id='other-message-id',
+            content='他のユーザーのメッセージ',
+            user_id=other_user.id,
+            channel_id=channel.id,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(message)
+        db.session.commit()
+        
+        # 他のユーザーのメッセージを編集しようとする
+        response = auth_client.post(f'/chat/messages/{message.id}/edit', data={
+            'content': '編集しようとしたメッセージ'
+        }, follow_redirects=True)
+        
+        assert response.status_code == 200
+        assert '自分のメッセージのみ編集できます' in response.get_data(as_text=True)
+        
+        # メッセージが編集されていないことを確認
+        unchanged_message = Message.query.get(message.id)
+        assert unchanged_message.content == '他のユーザーのメッセージ'
 
-def test_delete_message(auth_client, test_channel, test_user, app):
+def test_delete_message(auth_client, test_user, test_channel, app):
     """メッセージ削除のテスト"""
     with app.app_context():
-        # メッセージを作成
+        # テスト用メッセージを作成
         message = Message(
-            id=str(uuid.uuid4()),
-            content='Test message',
-            channel_id=test_channel,
+            id='test-message-id',
+            content='削除するメッセージ',
             user_id=test_user,
+            channel_id=test_channel,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
@@ -152,36 +177,62 @@ def test_delete_message(auth_client, test_channel, test_user, app):
         db.session.commit()
         
         # メッセージを削除
-        response = auth_client.delete(f'/chat/messages/{message.id}')
+        response = auth_client.post(f'/chat/messages/{message.id}/delete', follow_redirects=True)
+        
         assert response.status_code == 200
+        assert 'メッセージを削除しました' in response.get_data(as_text=True)
         
-        # メッセージが削除されたことを確認
-        deleted_message = db.session.get(Message, message.id)
+        # メッセージが削除されたか確認
+        deleted_message = Message.query.get(message.id)
         assert deleted_message is None
-        
-        # 異常系：他のユーザーのメッセージを削除
+
+def test_delete_message_unauthorized(auth_client, app):
+    """他のユーザーのメッセージを削除しようとしたときのテスト"""
+    with app.app_context():
+        # 別のユーザーを作成
         other_user = User(
             id='other-user-id',
-            username='otheruser',
+            username='other_user',
             password_hash='dummy_hash',
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
         db.session.add(other_user)
-        other_message = Message(
-            id=str(uuid.uuid4()),
-            channel_id=test_channel,
-            user_id=other_user.id,
-            content='Other user message',
+        db.session.commit()
+        
+        # チャンネルを作成
+        channel = Channel(
+            id='test-channel-id',
+            name='テストチャンネル',
+            created_by=other_user.id,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
-        db.session.add(other_message)
+        db.session.add(channel)
         db.session.commit()
         
-        response = auth_client.delete(f'/chat/messages/{other_message.id}')
-        assert response.status_code == 403
-        assert b'permission denied' in response.data.lower()
+        # 他のユーザーのメッセージを作成
+        message = Message(
+            id='other-message-id',
+            content='他のユーザーのメッセージ',
+            user_id=other_user.id,
+            channel_id=channel.id,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(message)
+        db.session.commit()
+        
+        # 他のユーザーのメッセージを削除しようとする
+        response = auth_client.post(f'/chat/messages/{message.id}/delete', follow_redirects=True)
+        
+        assert response.status_code == 200
+        assert '自分のメッセージのみ削除できます' in response.get_data(as_text=True)
+        
+        # メッセージが削除されていないことを確認
+        unchanged_message = Message.query.get(message.id)
+        assert unchanged_message is not None
+        assert unchanged_message.content == '他のユーザーのメッセージ'
 
 def test_message_reactions(auth_client, test_channel, test_user, app):
     """メッセージリアクションのテスト"""

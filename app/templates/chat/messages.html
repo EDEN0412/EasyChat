@@ -382,16 +382,16 @@ socket.on('new_message', function(message) {
 });
 
 // メッセージ編集時の処理
-socket.on('edit_message', function(message) {
-    const messageElement = document.getElementById(`message-${message.id}`);
+socket.on('message_edited', function(message) {
+    const messageElement = document.getElementById(`message-${message.message_id}`);
     if (messageElement) {
-        const contentElement = document.getElementById(`message-content-${message.id}`);
+        const contentElement = document.getElementById(`message-content-${message.message_id}`);
         // サーバー側で既にフォーマットされたコンテンツをそのまま使用
         contentElement.innerHTML = message.content;
         
         // 編集済みマークの更新
         const timestamp = messageElement.querySelector('.timestamp');
-        if (!timestamp.querySelector('.edited-mark')) {
+        if (!timestamp.querySelector('.edited-mark') && message.is_edited) {
             const editedMark = document.createElement('span');
             editedMark.className = 'edited-mark';
             editedMark.textContent = '（編集済み）';
@@ -401,7 +401,7 @@ socket.on('edit_message', function(message) {
 });
 
 // メッセージ削除時の処理
-socket.on('delete_message', function(data) {
+socket.on('message_deleted', function(data) {
     const messageElement = document.getElementById(`message-${data.message_id}`);
     if (messageElement) {
         messageElement.remove();

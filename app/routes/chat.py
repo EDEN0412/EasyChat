@@ -164,20 +164,26 @@ def send_message():
     # 通常のフォーム送信の場合はリダイレクト
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
-@bp.route('/messages/<string:message_id>', methods=['PUT', 'POST'])
+@bp.route('/messages/<string:message_id>/edit', methods=['POST'])
 @login_required
 def edit_message(message_id):
-    message = Message.query.get_or_404(message_id)
+    """メッセージを編集する"""
+    content = request.form.get('content', '').strip()
     
-    # 権限チェック
-    if message.user_id != session['user_id']:
-        return jsonify({'error': 'Permission denied'}), 403
-    
-    content = request.json.get('content') if request.is_json else request.form.get('content')
     if not content:
-        return jsonify({'error': 'Content is required'}), 400
+        flash('メッセージを入力してください', 'error')
+        return redirect(url_for('chat.messages'))
     
-    # 内容が変更されたかチェック
+    message = Message.query.get(message_id)
+    if not message:
+        flash('メッセージが見つかりません', 'error')
+        return redirect(url_for('chat.messages'))
+    
+    if message.user_id != session['user_id']:
+        flash('自分のメッセージのみ編集できます', 'error')
+        return redirect(url_for('chat.messages'))
+    
+    # 内容に変更があるか確認
     content_changed = message.content != content
     
     if content_changed:
@@ -186,42 +192,41 @@ def edit_message(message_id):
         message.updated_at = datetime.now(UTC)
         db.session.commit()
         
-        # メッセージにメンションタグを適用
-        formatted_message = format_message(message)
+        # WebSocketで編集済みメッセージを送信
+        socketio.emit('message_edited', {
+            'message_id': message.id,
+            'content': message.content,
+            'is_edited': message.is_edited
+        }, room=message.channel_id)
         
-        # WebSocketで編集をブロードキャスト
-        socketio.emit('edit_message', formatted_message)
-        
-        # 内容が変更された場合のみフラッシュメッセージを表示
         flash('メッセージを編集しました', 'success')
     
-    if request.is_json:
-        return jsonify(formatted_message if content_changed else format_message(message))
     return redirect(url_for('chat.messages', channel_id=message.channel_id))
 
 @bp.route('/messages/<string:message_id>/delete', methods=['POST'])
 @login_required
 def delete_message(message_id):
-    message = Message.query.get_or_404(message_id)
+    """メッセージを削除する"""
+    message = Message.query.get(message_id)
     
-    # 権限チェック
+    if not message:
+        flash('メッセージが見つかりません', 'error')
+        return redirect(url_for('chat.messages'))
+    
     if message.user_id != session['user_id']:
-        flash('他のユーザーのメッセージは削除できません')
-        return redirect(url_for('chat.messages', channel_id=message.channel_id))
+        flash('自分のメッセージのみ削除できます', 'error')
+        return redirect(url_for('chat.messages'))
     
     channel_id = message.channel_id
-    
-    # 関連するリアクションを先に削除
-    Reaction.query.filter_by(message_id=message_id).delete()
-    
-    # メッセージを削除
     db.session.delete(message)
     db.session.commit()
     
-    # WebSocketで削除をブロードキャスト
-    socketio.emit('delete_message', {'message_id': message_id})
+    # WebSocketでメッセージ削除を通知
+    socketio.emit('message_deleted', {
+        'message_id': message_id
+    }, room=channel_id)
     
-    flash('メッセージを削除しました')
+    flash('メッセージを削除しました', 'success')
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
 @bp.route('/messages/<string:message_id>', methods=['DELETE'])
