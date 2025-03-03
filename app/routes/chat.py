@@ -177,19 +177,26 @@ def edit_message(message_id):
     if not content:
         return jsonify({'error': 'Content is required'}), 400
     
-    message.content = content
-    message.is_edited = True
-    message.updated_at = datetime.now(UTC)
-    db.session.commit()
+    # 内容が変更されたかチェック
+    content_changed = message.content != content
     
-    # メッセージにメンションタグを適用
-    formatted_message = format_message(message)
-    
-    # WebSocketで編集をブロードキャスト
-    socketio.emit('edit_message', formatted_message)
+    if content_changed:
+        message.content = content
+        message.is_edited = True
+        message.updated_at = datetime.now(UTC)
+        db.session.commit()
+        
+        # メッセージにメンションタグを適用
+        formatted_message = format_message(message)
+        
+        # WebSocketで編集をブロードキャスト
+        socketio.emit('edit_message', formatted_message)
+        
+        # 内容が変更された場合のみフラッシュメッセージを表示
+        flash('メッセージを編集しました', 'success')
     
     if request.is_json:
-        return jsonify(formatted_message)
+        return jsonify(formatted_message if content_changed else format_message(message))
     return redirect(url_for('chat.messages', channel_id=message.channel_id))
 
 @bp.route('/messages/<string:message_id>/delete', methods=['POST'])
