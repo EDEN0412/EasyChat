@@ -635,6 +635,11 @@
             align-items: center;
             justify-content: center;
         }
+        
+        /* モーダル表示用のクラス */
+        .modal.show {
+            display: flex;
+        }
 
         .modal-content {
             background-color: var(--bg-secondary);
@@ -1054,12 +1059,17 @@
         }
 
         // モーダルの外側をクリックした時に閉じる
-        window.onclick = function(event) {
+        window.addEventListener('click', function(event) {
             const modal = document.getElementById('create-channel-modal');
             if (event.target === modal) {
                 modal.style.display = 'none';
             }
-        }
+            
+            const editModal = document.getElementById('edit-channel-modal');
+            if (event.target === editModal) {
+                editModal.classList.remove('show');
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', function() {
             const flashMessages = document.querySelectorAll('.flash-message[data-auto-dismiss]');

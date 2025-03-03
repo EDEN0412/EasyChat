@@ -354,4 +354,47 @@ def delete_channel(channel_id):
     except Exception as e:
         db.session.rollback()
         flash('チャンネルの削除に失敗しました', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+
+@bp.route('/channels/<string:channel_id>/edit', methods=['POST'])
+@login_required
+def edit_channel(channel_id):
+    # チャンネルの取得
+    channel = Channel.query.get_or_404(channel_id)
+    
+    # 自分が作成者かどうかチェック
+    if channel.created_by != session.get('user_id'):
+        flash('自分が作成したチャンネルのみ編集できます', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    
+    # デフォルトチャンネルは編集できないようにする
+    default_channel = get_or_create_default_channel()
+    if channel.id == default_channel.id:
+        flash('デフォルトチャンネルは編集できません', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    
+    # 新しいチャンネル名を取得
+    new_name = request.form.get('name')
+    if not new_name:
+        flash('チャンネル名は必須です', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    
+    # 同名チャンネルのチェック（自分自身は除く）
+    existing_channel = Channel.query.filter(Channel.name == new_name, Channel.id != channel_id).first()
+    if existing_channel:
+        flash('同じ名前のチャンネルが既に存在します', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    
+    try:
+        # 変更があるかチェック
+        if channel.name != new_name:
+            # チャンネル名を更新
+            channel.name = new_name
+            channel.updated_at = datetime.now(UTC)
+            db.session.commit()
+            flash('チャンネル名を更新しました', 'success')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    except Exception as e:
+        db.session.rollback()
+        flash('チャンネル名の更新に失敗しました', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id)) 

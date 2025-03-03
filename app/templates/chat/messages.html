@@ -105,6 +105,22 @@
     background-color: rgba(255, 56, 96, 0.1);
 }
 
+.btn-edit-channel {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-right: 5px;
+}
+
+.btn-edit-channel:hover {
+    color: #3273dc;
+    background-color: rgba(50, 115, 220, 0.1);
+}
+
 .channel-link {
     text-decoration: none;
     color: inherit;
@@ -136,6 +152,7 @@
                     <div class="channel-name"># {{ channel.name }}</div>
                     {% if channel.created_by == session.get('user_id') %}
                     <div class="channel-actions">
+                        <button type="button" class="btn-edit-channel" onclick="showEditChannelModal('{{ channel.id }}', '{{ channel.name }}')" title="チャンネル名を編集">✎</button>
                         <form action="{{ url_for('chat.delete_channel', channel_id=channel.id) }}" method="POST" style="display: inline;">
                             <button type="submit" class="btn-delete-channel" onclick="return confirm('チャンネルを削除します。このアクションは元に戻せません。続行しますか？')" title="チャンネルを削除">×</button>
                         </form>
@@ -257,6 +274,24 @@
             <div class="modal-actions">
                 <button type="button" onclick="hideCreateChannelModal()" class="btn-secondary">キャンセル</button>
                 <button type="submit" class="btn-primary">作成</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- チャンネル編集モーダル -->
+<div id="edit-channel-modal" class="modal">
+    <div class="modal-content">
+        <h3>チャンネル名の編集</h3>
+        <form id="edit-channel-form" action="" method="POST">
+            <div class="form-group">
+                <label for="edit-channel-name">チャンネル名</label>
+                <input type="text" id="edit-channel-name" name="name" required 
+                       placeholder="例: general" minlength="1" maxlength="255">
+            </div>
+            <div class="modal-actions">
+                <button type="button" onclick="hideEditChannelModal()" class="btn-secondary">キャンセル</button>
+                <button type="submit" class="btn-primary">更新</button>
             </div>
         </form>
     </div>
@@ -690,5 +725,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// チャンネル作成モーダルを表示
+function showCreateChannelModal() {
+    const modal = document.getElementById('create-channel-modal');
+    modal.classList.add('show');
+}
+
+// チャンネル作成モーダルを非表示
+function hideCreateChannelModal() {
+    const modal = document.getElementById('create-channel-modal');
+    modal.classList.remove('show');
+}
+
+// チャンネル編集モーダルを表示
+function showEditChannelModal(channelId, channelName) {
+    const modal = document.getElementById('edit-channel-modal');
+    const form = document.getElementById('edit-channel-form');
+    const nameInput = document.getElementById('edit-channel-name');
+    
+    // フォームのアクション設定
+    form.action = `/chat/channels/${channelId}/edit`;
+    
+    // 現在のチャンネル名をセット
+    nameInput.value = channelName;
+    
+    // モーダル表示
+    modal.classList.add('show');
+    
+    // イベント伝播を防止（親のリンクがクリックされないようにする）
+    event.preventDefault();
+    event.stopPropagation();
+}
+
+// チャンネル編集モーダルを非表示
+function hideEditChannelModal() {
+    const modal = document.getElementById('edit-channel-modal');
+    modal.classList.remove('show');
+}
 </script>
 {% endblock %}
