@@ -89,10 +89,6 @@ def messages(channel_id=None):
         Message.channel_id == channel_id
     ).distinct().all()
     
-    # メンションがない場合は、全ユーザーを取得
-    if not channel_users:
-        channel_users = User.query.all()
-    
     users_data = [{'id': user.id, 'username': user.username} for user in channel_users]
     
     return render_template('chat/messages.html', 

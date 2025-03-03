@@ -452,6 +452,11 @@ let mentionStart = -1;
 let mentionText = '';
 
 function handleInput(input) {
+    // ユーザーリストが空の場合は何もしない
+    if (!users || users.length === 0) {
+        return;
+    }
+    
     const cursorPos = input.selectionStart;
     const text = input.value;
     
