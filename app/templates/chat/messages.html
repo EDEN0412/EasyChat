@@ -104,6 +104,21 @@
     color: #ff3860;
     background-color: rgba(255, 56, 96, 0.1);
 }
+
+.channel-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    width: 100%;
+}
+
+.channel-link:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .channel-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
 </style>
 
 <div class="chat-layout">
@@ -116,18 +131,18 @@
         </div>
         <div class="channels-list">
             {% for channel in channels %}
-            <div class="channel-item {% if channel.id == current_channel.id %}active{% endif %}">
-                <a href="{{ url_for('chat.messages', channel_id=channel.id) }}">
+            <a href="{{ url_for('chat.messages', channel_id=channel.id) }}" class="channel-link">
+                <div class="channel-item {% if channel.id == current_channel.id %}active{% endif %}">
                     <div class="channel-name"># {{ channel.name }}</div>
-                </a>
-                {% if channel.created_by == session.get('user_id') %}
-                <div class="channel-actions">
-                    <form action="{{ url_for('chat.delete_channel', channel_id=channel.id) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn-delete-channel" onclick="return confirm('チャンネルを削除します。このアクションは元に戻せません。続行しますか？')" title="チャンネルを削除">×</button>
-                    </form>
+                    {% if channel.created_by == session.get('user_id') %}
+                    <div class="channel-actions">
+                        <form action="{{ url_for('chat.delete_channel', channel_id=channel.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn-delete-channel" onclick="return confirm('チャンネルを削除します。このアクションは元に戻せません。続行しますか？')" title="チャンネルを削除">×</button>
+                        </form>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div>
+            </a>
             {% endfor %}
         </div>
     </div>
@@ -590,6 +605,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ページ読み込み時に最下部にスクロール
     scrollToBottom();
+
+    // 削除ボタンのイベント伝播を防止
+    const deleteButtons = document.querySelectorAll('.btn-delete-channel');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            // イベントの伝播を防止（親のリンクがクリックされないようにする）
+            event.stopPropagation();
+        });
+    });
 });
 
 // フラッシュメッセージを表示する関数
@@ -654,5 +678,16 @@ function highlightMention(messageElement) {
         messageElement.classList.remove('mentioned');
     }, 3000);
 }
+
+// 削除ボタンのイベント伝播を防止
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteButtons = document.querySelectorAll('.btn-delete-channel');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            // イベントの伝播を防止（親のリンクがクリックされないようにする）
+            event.stopPropagation();
+        });
+    });
+});
 </script>
 {% endblock %}
