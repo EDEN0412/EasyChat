@@ -51,6 +51,27 @@
     color: white;
     font-size: 16px;
 }
+
+/* メンションスタイル */
+.mention {
+    background-color: rgba(29, 155, 240, 0.2);
+    color: #1d9bf0;
+    border-radius: 4px;
+    padding: 0 4px;
+    font-weight: bold;
+}
+
+/* メンション通知効果 */
+@keyframes mentionHighlight {
+    0% { background-color: rgba(29, 155, 240, 0.1); }
+    50% { background-color: rgba(29, 155, 240, 0.3); }
+    100% { background-color: rgba(29, 155, 240, 0.1); }
+}
+
+.message.mentioned {
+    animation: mentionHighlight 1s ease-in-out infinite;
+    border-left: 3px solid #1d9bf0;
+}
 </style>
 
 <div class="chat-layout">
@@ -110,7 +131,7 @@
                     </span>
                 </div>
                 <div class="message-content" id="message-content-{{ message.id }}">
-                    {{ message.content }}
+                    {{ message.display_content|safe }}
                 </div>
                 <div class="reactions" id="reactions-{{ message.id }}">
                     {% for reaction in message.reactions %}
@@ -141,7 +162,7 @@
                 </div>
                 <div class="edit-form" id="edit-form-{{ message.id }}" style="display: none;">
                     <form action="{{ url_for('chat.edit_message', message_id=message.id) }}" method="POST">
-                        <input type="text" name="content" value="{{ message.content }}" required>
+                        <input type="text" name="content" value="{{ message.content|striptags }}" required>
                         <button type="submit" class="btn-action">保存</button>
                         <button type="button" class="btn-action" onclick="hideEditForm('{{ message.id }}')">キャンセル</button>
                     </form>
@@ -262,6 +283,12 @@ socket.on('new_message', function(message) {
     const messageElement = createMessageElement(message);
     messagesArea.appendChild(messageElement);
     scrollToBottom();
+    
+    // 自分がメンションされているか確認
+    if (message.mentions && message.mentions.includes('{{ session.get("username") }}')) {
+        // メンションされた場合、通知効果を適用
+        highlightMention(messageElement);
+    }
 });
 
 // メッセージ編集時の処理
@@ -269,7 +296,8 @@ socket.on('edit_message', function(message) {
     const messageElement = document.getElementById(`message-${message.id}`);
     if (messageElement) {
         const contentElement = document.getElementById(`message-content-${message.id}`);
-        contentElement.textContent = message.content;
+        // サーバー側で既にフォーマットされたコンテンツをそのまま使用
+        contentElement.innerHTML = message.content;
         
         // 編集済みマークの更新
         const timestamp = messageElement.querySelector('.timestamp');
@@ -401,7 +429,7 @@ function createMessageElement(message) {
             </div>
             <div class="edit-form" id="edit-form-${message.id}" style="display: none;">
                 <form action="/chat/messages/${message.id}" method="POST">
-                    <input type="text" name="content" value="${message.content}" required>
+                    <input type="text" name="content" value="${message.raw_content || message.content}" required>
                     <button type="submit" class="btn-action">保存</button>
                     <button type="button" class="btn-action" onclick="hideEditForm('${message.id}')">キャンセル</button>
                 </form>
@@ -411,6 +439,11 @@ function createMessageElement(message) {
     
     div.innerHTML = messageHTML;
     return div;
+}
+
+// メンションをハイライト表示する関数
+function formatMentions(text) {
+    return text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
 }
 
 // メンション機能
@@ -569,5 +602,13 @@ socket.on('connect_error', function(error) {
 socket.on('disconnect', function(reason) {
     console.log('Socket.IOから切断されました:', reason);
 });
+
+// メンション通知効果
+function highlightMention(messageElement) {
+    messageElement.classList.add('mentioned');
+    setTimeout(() => {
+        messageElement.classList.remove('mentioned');
+    }, 3000);
+}
 </script>
 {% endblock %}

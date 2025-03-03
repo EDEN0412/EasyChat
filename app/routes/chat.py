@@ -41,19 +41,20 @@ def format_reactions(message):
 def format_message(message):
     """メッセージをJSON形式にフォーマット"""
     content = message.content
-    # メンションをリンクに変換
+    # メンションをスパンに変換
     mentions = re.findall(r'@(\w+)', content)
     for username in mentions:
         user = User.query.filter_by(username=username).first()
         if user:
             content = content.replace(
                 f'@{username}',
-                f'<a href="#" class="mention">@{username}</a>'
+                f'<span class="mention">@{username}</span>'
             )
     
     return {
         'id': message.id,
         'content': content,
+        'raw_content': message.content,
         'user_id': message.user_id,
         'username': message.author.username,
         'created_at': message.created_at.strftime('%Y-%m-%d %H:%M'),
@@ -79,15 +80,39 @@ def messages(channel_id=None):
     # チャンネルのメッセージを取得
     messages = Message.query.filter_by(channel_id=channel_id).order_by(Message.created_at.asc()).all()
     
-    # ユーザー一覧を取得（メンション用）
-    users = User.query.all()
-    users_data = [{'id': user.id, 'username': user.username} for user in users]
+    # 各メッセージのコンテンツにメンションタグを適用
+    for message in messages:
+        message.display_content = format_mentions(message.content)
+    
+    # 現在のチャンネルに投稿したユーザーのリストを取得（重複なし）
+    channel_users = db.session.query(User).join(Message).filter(
+        Message.channel_id == channel_id
+    ).distinct().all()
+    
+    # メンションがない場合は、全ユーザーを取得
+    if not channel_users:
+        channel_users = User.query.all()
+    
+    users_data = [{'id': user.id, 'username': user.username} for user in channel_users]
     
     return render_template('chat/messages.html', 
                          messages=messages, 
                          channels=channels,
                          current_channel=current_channel,
                          users=users_data)
+
+def format_mentions(content):
+    """メッセージコンテンツ内のメンションをHTMLタグに変換"""
+    mentions = re.findall(r'@(\w+)', content)
+    result = content
+    for username in mentions:
+        user = User.query.filter_by(username=username).first()
+        if user:
+            result = result.replace(
+                f'@{username}',
+                f'<span class="mention">@{username}</span>'
+            )
+    return result
 
 @bp.route('/send', methods=['POST'])
 @login_required
@@ -104,6 +129,11 @@ def send_message():
     # チャンネルの存在確認
     channel = Channel.query.get_or_404(channel_id)
     
+    # メンションされたユーザーを検出
+    mentioned_usernames = []
+    mention_pattern = r'@(\w+)'
+    mentioned_usernames = re.findall(mention_pattern, content)
+    
     # メッセージを保存
     message = Message(
         id=str(uuid.uuid4()),
@@ -115,8 +145,11 @@ def send_message():
     db.session.add(message)
     db.session.commit()
     
-    # WebSocketでメッセージをブロードキャスト
+    # メンション情報を付加
     formatted_message = format_message(message)
+    formatted_message['mentions'] = mentioned_usernames
+    
+    # WebSocketでメッセージをブロードキャスト
     socketio.emit('new_message', formatted_message, room=channel_id)
     
     # AJAXリクエストの場合はJSONを返す
