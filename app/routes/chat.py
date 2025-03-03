@@ -303,4 +303,36 @@ def create_channel():
         db.session.rollback()
         print(f"エラー: チャンネル作成に失敗: {str(e)}")
         flash('チャンネルの作成に失敗しました')
-        return redirect(url_for('chat.messages')) 
+        return redirect(url_for('chat.messages'))
+
+@bp.route('/channels/<string:channel_id>/delete', methods=['POST'])
+@login_required
+def delete_channel(channel_id):
+    # チャンネルの取得
+    channel = Channel.query.get_or_404(channel_id)
+    
+    # 自分が作成者かどうかチェック
+    if channel.created_by != session.get('user_id'):
+        flash('自分が作成したチャンネルのみ削除できます', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    
+    # デフォルトチャンネルは削除できないようにする
+    default_channel = get_or_create_default_channel()
+    if channel.id == default_channel.id:
+        flash('デフォルトチャンネルは削除できません', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    
+    try:
+        # チャンネルに関連するメッセージを削除
+        Message.query.filter_by(channel_id=channel.id).delete()
+        
+        # チャンネルを削除
+        db.session.delete(channel)
+        db.session.commit()
+        
+        flash('チャンネルを削除しました', 'success')
+        return redirect(url_for('chat.messages', channel_id=default_channel.id))
+    except Exception as e:
+        db.session.rollback()
+        flash('チャンネルの削除に失敗しました', 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id)) 

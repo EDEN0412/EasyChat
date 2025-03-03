@@ -125,3 +125,74 @@ def test_channel_creation_flash_messages(auth_client, test_user, app):
             'name': ''
         }, follow_redirects=True)
         assert 'チャンネル名は必須です' in response.get_data(as_text=True) 
+
+def test_delete_channel(auth_client, test_user, app):
+    """チャンネル削除機能のテスト"""
+    with app.app_context():
+        # テスト用のチャンネルを作成（自分が作成者）
+        own_channel = Channel(
+            id='own-channel-id',
+            name='my-channel',
+            created_by=test_user,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(own_channel)
+        
+        # 他のユーザーが作成したチャンネル
+        another_user = User(
+            id='another-user-id',
+            username='another',
+            password_hash='dummy_hash',
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(another_user)
+        db.session.commit()
+        
+        other_channel = Channel(
+            id='other-channel-id',
+            name='other-channel',
+            created_by=another_user.id,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(other_channel)
+        
+        # デフォルトチャンネルを作成（チャンネル削除後のリダイレクト先）
+        default_channel = Channel(
+            id='default-channel-id',
+            name='general',
+            created_by=test_user,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(default_channel)
+        db.session.commit()
+        
+        # 正常系：自分が作成したチャンネルを削除
+        response = auth_client.post(f'/chat/channels/{own_channel.id}/delete', follow_redirects=True)
+        assert response.status_code == 200
+        assert 'チャンネルを削除しました' in response.get_data(as_text=True)
+        
+        # チャンネルが実際に削除されたか確認
+        deleted_channel = Channel.query.filter_by(id=own_channel.id).first()
+        assert deleted_channel is None
+        
+        # 異常系：他のユーザーが作成したチャンネルを削除しようとする
+        response = auth_client.post(f'/chat/channels/{other_channel.id}/delete', follow_redirects=True)
+        assert response.status_code == 200
+        assert '自分が作成したチャンネルのみ削除できます' in response.get_data(as_text=True)
+        
+        # チャンネルが削除されていないことを確認
+        not_deleted_channel = Channel.query.filter_by(id=other_channel.id).first()
+        assert not_deleted_channel is not None
+        
+        # 異常系：デフォルトチャンネルを削除しようとする
+        response = auth_client.post(f'/chat/channels/{default_channel.id}/delete', follow_redirects=True)
+        assert response.status_code == 200
+        assert 'デフォルトチャンネルは削除できません' in response.get_data(as_text=True)
+        
+        # デフォルトチャンネルが削除されていないことを確認
+        default_not_deleted = Channel.query.filter_by(id=default_channel.id).first()
+        assert default_not_deleted is not None 
