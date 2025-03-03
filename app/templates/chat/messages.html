@@ -178,7 +178,8 @@
                 <div class="message-header">
                     <span class="username">{{ message.author.username }}</span>
                     <span class="timestamp">
-                        {{ message.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% set created_at_jst = message.created_at.replace(tzinfo=utc).astimezone(jst) %}
+                        {{ created_at_jst.strftime('%Y年%m月%d日 %H:%M') }}
                         {% if message.is_edited %}
                         <span class="edited-mark">（編集済み）</span>
                         {% endif %}

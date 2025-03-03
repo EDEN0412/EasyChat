@@ -6,8 +6,12 @@ from sqlalchemy import func
 import uuid
 from functools import wraps
 import re
+import pytz
 
 bp = Blueprint('chat', __name__)
+
+# 東京タイムゾーンの定義
+JST = pytz.timezone('Asia/Tokyo')
 
 def login_required(f):
     @wraps(f)
@@ -51,13 +55,16 @@ def format_message(message):
                 f'<span class="mention">@{username}</span>'
             )
     
+    # UTCから東京時間に変換
+    created_at_jst = message.created_at.replace(tzinfo=UTC).astimezone(JST)
+    
     return {
         'id': message.id,
         'content': content,
         'raw_content': message.content,
         'user_id': message.user_id,
         'username': message.author.username,
-        'created_at': message.created_at.strftime('%Y-%m-%d %H:%M'),
+        'created_at': created_at_jst.strftime('%Y年%m月%d日 %H:%M'),
         'is_edited': message.is_edited,
         'reactions': format_reactions(message)
     }
@@ -95,7 +102,9 @@ def messages(channel_id=None):
                          messages=messages, 
                          channels=channels,
                          current_channel=current_channel,
-                         users=users_data)
+                         users=users_data,
+                         utc=UTC,
+                         jst=JST)
 
 def format_mentions(content):
     """メッセージコンテンツ内のメンションをHTMLタグに変換"""
@@ -173,11 +182,14 @@ def edit_message(message_id):
     message.updated_at = datetime.now(UTC)
     db.session.commit()
     
+    # メッセージにメンションタグを適用
+    formatted_message = format_message(message)
+    
     # WebSocketで編集をブロードキャスト
-    socketio.emit('edit_message', format_message(message))
+    socketio.emit('edit_message', formatted_message)
     
     if request.is_json:
-        return jsonify(format_message(message))
+        return jsonify(formatted_message)
     return redirect(url_for('chat.messages', channel_id=message.channel_id))
 
 @bp.route('/messages/<string:message_id>/delete', methods=['POST'])
