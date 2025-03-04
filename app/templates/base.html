@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="EasyChat - シンプルで使いやすいチャットアプリケーション">
-    <title>EasyChat</title>
+    <title>{% block title %}EasyChat{% endblock %}</title>
     <style>
         /* リセットとベーススタイル */
         :root {
@@ -594,6 +594,154 @@
             }
         }
 
+        /* モバイル向けレイアウト（767px以下） */
+        @media (max-width: 767px) {
+            .chat-layout {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                width: 100vw;
+                position: relative;
+            }
+            
+            /* ハンバーガーメニューボタン */
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                z-index: 1000;
+                width: 40px;
+                height: 40px;
+                background-color: var(--accent-color);
+                border-radius: 50%;
+                border: none;
+                color: white;
+                font-size: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            
+            /* オフキャンバスサイドバー */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px; /* 初期状態では画面外 */
+                width: 280px;
+                height: 100vh;
+                z-index: 999;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+            }
+            
+            /* サイドバーが開いた状態 */
+            .sidebar.open {
+                left: 0;
+            }
+            
+            /* メインコンテンツ */
+            .chat-container {
+                width: 100%;
+                height: 100vh;
+                padding-top: 60px; /* ハンバーガーメニューの下に配置 */
+            }
+            
+            /* メッセージエリアの調整 */
+            .messages-area {
+                height: calc(100vh - 130px);
+                padding: 15px;
+            }
+            
+            /* 入力フォームの調整 */
+            .message-form {
+                padding: 10px;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: var(--bg-primary);
+                border-top: 1px solid var(--border-color);
+            }
+            
+            /* オーバーレイ（サイドバーが開いたときの背景） */
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 998;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+            
+            /* モバイル向けのタッチ操作最適化 */
+            .btn, .btn-action, .reaction {
+                padding: 12px 16px;
+                min-height: 44px; /* タップしやすいサイズ */
+            }
+            
+            .message {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            
+            /* チャンネルヘッダーの調整 */
+            .channel-header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 60px;
+                padding: 0 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: var(--bg-primary);
+                border-bottom: 1px solid var(--border-color);
+                z-index: 10;
+            }
+            
+            /* アカウントメニューの調整 */
+            .account-menu-container {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 100;
+            }
+            
+            .account-button {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+            }
+            
+            .account-menu {
+                top: 50px;
+                right: 10px;
+                width: 200px;
+            }
+            
+            /* チャンネル作成モーダルの調整 */
+            .modal-content {
+                width: 90%;
+                max-width: 300px;
+            }
+            
+            /* フラッシュメッセージの調整 */
+            .flash-messages {
+                top: 60px;
+                width: 90%;
+            }
+        }
+        
         /* タブレット向けレイアウト（768px-1023px） */
         @media (min-width: 768px) and (max-width: 1023px) {
             .chat-layout {
@@ -1102,8 +1250,26 @@
         <span class="theme-icon">🌙</span>
     </button>
     {% endif %}
-    {% block content %}{% endblock %}
-
+    {% block content %}
+    <div class="chat-layout">
+        <!-- ハンバーガーメニューボタン（モバイル用） -->
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        
+        <!-- オーバーレイ（モバイル用） -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- サイドバー -->
+        <div class="sidebar" id="sidebar">
+            <!-- ... existing sidebar content ... -->
+        </div>
+        
+        <!-- メインコンテンツ -->
+        <div class="chat-container">
+            <!-- ... existing chat container content ... -->
+        </div>
+    </div>
+    {% endblock %}
+    
     <script>
         // テーマの初期設定
         const theme = localStorage.getItem('theme') || 'light';
@@ -1123,40 +1289,74 @@
         // ボタンの表示を更新
         function updateThemeButton(theme) {
             const icon = document.querySelector('.theme-icon');
-            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+            if (icon) {
+                icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
         }
 
         // チャンネル作成モーダルの制御
         function showCreateChannelModal() {
             const modal = document.getElementById('create-channel-modal');
-            modal.style.display = 'flex';
+            if (modal) {
+                modal.style.display = 'flex';
+            }
         }
 
         function hideCreateChannelModal() {
             const modal = document.getElementById('create-channel-modal');
-            modal.style.display = 'none';
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
         // モーダルの外側をクリックした時に閉じる
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('create-channel-modal');
-            if (event.target === modal) {
+            if (modal && event.target === modal) {
                 modal.style.display = 'none';
             }
             
             const editModal = document.getElementById('edit-channel-modal');
-            if (event.target === editModal) {
+            if (editModal && event.target === editModal) {
                 editModal.classList.remove('show');
             }
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // フラッシュメッセージの自動消去
             const flashMessages = document.querySelectorAll('.flash-message[data-auto-dismiss]');
             flashMessages.forEach(message => {
                 setTimeout(() => {
                     message.parentElement.removeChild(message);
                 }, 2000);
             });
+            
+            // ハンバーガーメニュー制御
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            if (menuToggle && sidebar && overlay) {
+                // メニュー開閉の処理
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                    overlay.classList.toggle('active');
+                });
+                
+                // オーバーレイクリックでメニューを閉じる
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                });
+                
+                // 画面サイズが変わったときの処理
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth > 767) {
+                        sidebar.classList.remove('open');
+                        overlay.classList.remove('active');
+                    }
+                });
+            }
         });
     </script>
 </body>

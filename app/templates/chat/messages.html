@@ -135,10 +135,36 @@
 .dark-theme .channel-link:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
+
+/* モバイル用チャンネルヘッダー */
+.channel-header {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .channel-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+    }
+    
+    .channel-header h2 {
+        margin: 0;
+        font-size: 18px;
+        text-align: center;
+    }
+}
 </style>
 
 <div class="chat-layout">
-    <div class="sidebar">
+    <!-- ハンバーガーメニューボタン（モバイル用） -->
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    
+    <!-- オーバーレイ（モバイル用） -->
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="sidebar" id="sidebar">
         <div class="channels-header">
             <h2>チャンネル一覧</h2>
             <button onclick="showCreateChannelModal()" class="create-channel-btn" title="新規チャンネル作成">
@@ -165,6 +191,11 @@
     </div>
     
     <div class="chat-container">
+        <!-- モバイル用チャンネルヘッダー -->
+        <div class="channel-header">
+            <h2># {{ current_channel.name }}</h2>
+        </div>
+        
         <div class="account-menu-container">
             <button class="account-button" onclick="toggleAccountMenu()" title="アカウント設定">
                 <span class="account-icon">👤</span>
