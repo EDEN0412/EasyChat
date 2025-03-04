@@ -175,6 +175,15 @@
         z-index: 1000 !important; /* サイドバーより下、他の要素より上 */
     }
 }
+
+/* モーダルのz-indexを上げる */
+#create-channel-modal, #edit-channel-modal {
+    z-index: 1002 !important; /* サイドバーよりも上に表示 */
+}
+
+#create-channel-modal .modal-content, #edit-channel-modal .modal-content {
+    z-index: 1003 !important; /* モーダル背景よりも上に表示 */
+}
 </style>
 
 <div class="chat-layout">
@@ -781,6 +790,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function showCreateChannelModal() {
     const modal = document.getElementById('create-channel-modal');
     modal.classList.add('show');
+    
+    // イベント伝播を防止
+    event.preventDefault();
+    event.stopPropagation();
 }
 
 // チャンネル作成モーダルを非表示
