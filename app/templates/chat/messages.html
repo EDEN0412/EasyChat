@@ -174,6 +174,25 @@
     .overlay {
         z-index: 1000 !important; /* サイドバーより下、他の要素より上 */
     }
+    
+    /* メッセージ入力フォームの調整 */
+    .message-form {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        background-color: var(--bg-primary);
+        border-top: 1px solid var(--border-color);
+        z-index: 100;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
+    
+    /* メッセージエリアの調整 */
+    .messages-area {
+        padding-bottom: 70px; /* 入力フォームの高さ分余白を追加 */
+        margin-bottom: 0;
+    }
 }
 
 /* モーダルのz-indexを上げる */
