@@ -606,7 +606,7 @@
             
             /* ハンバーガーメニューボタン */
             .menu-toggle {
-                display: block;
+                display: block; /* モバイル表示では表示 */
                 position: fixed;
                 top: 10px;
                 left: 10px;
@@ -632,7 +632,7 @@
                 left: -280px; /* 初期状態では画面外 */
                 width: 280px;
                 height: 100vh;
-                z-index: 999;
+                z-index: 1001; /* z-indexを上げて最前面に表示 */
                 transition: left 0.3s ease;
                 box-shadow: 2px 0 5px rgba(0,0,0,0.2);
             }
@@ -675,7 +675,7 @@
                 right: 0;
                 bottom: 0;
                 background-color: rgba(0,0,0,0.5);
-                z-index: 998;
+                z-index: 1000; /* サイドバーより下、他の要素より上 */
             }
             
             .overlay.active {
@@ -1229,6 +1229,11 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+        }
+
+        /* ハンバーガーメニューボタン */
+        .menu-toggle {
+            display: none; /* デフォルトでは非表示 */
         }
     </style>
 </head>

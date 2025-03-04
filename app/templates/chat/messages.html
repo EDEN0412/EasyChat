@@ -141,6 +141,11 @@
     display: none;
 }
 
+/* ハンバーガーメニューボタン - デフォルトでは非表示 */
+.menu-toggle {
+    display: none;
+}
+
 @media (max-width: 767px) {
     .channel-header {
         display: flex;
@@ -153,6 +158,21 @@
         margin: 0;
         font-size: 18px;
         text-align: center;
+    }
+    
+    /* ハンバーガーメニューボタンを表示 */
+    .menu-toggle {
+        display: flex;
+    }
+    
+    /* サイドバーのz-indexを上げる */
+    .sidebar {
+        z-index: 1001 !important; /* 最前面に表示 */
+    }
+    
+    /* オーバーレイのz-indexも調整 */
+    .overlay {
+        z-index: 1000 !important; /* サイドバーより下、他の要素より上 */
     }
 }
 </style>
