@@ -1,14 +1,14 @@
 <mxfile host="65bd71144e">
     <diagram id="chat-app-er" name="Chat App ER Diagram">
-        <mxGraphModel dx="628" dy="578" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1226" dy="816" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="user-table" value="User" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="40" width="200" height="160" as="geometry"/>
+                    <mxGeometry x="40" y="40" width="200" height="230" as="geometry"/>
                 </mxCell>
-                <mxCell id="user-fields" value="PK: user_id VARCHAR(255)&#xa;username VARCHAR(255) UNIQUE&#xa;password_hash VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="user-table" vertex="1">
-                    <mxGeometry y="30" width="200" height="130" as="geometry"/>
+                <mxCell id="user-fields" value="PK: user_id VARCHAR(255)&#xa;username VARCHAR(255) UNIQUE&#xa;password_hash VARCHAR(255)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP&#xa;&#xa;// 実装予定機能&#xa;avatar_url VARCHAR(255) NULL&#xa;status_message VARCHAR(255) NULL&#xa;theme_preference VARCHAR(20) NULL" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="user-table" vertex="1">
+                    <mxGeometry y="30" width="200" height="200" as="geometry"/>
                 </mxCell>
                 <mxCell id="channel-table" value="Channel" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="320" y="40" width="200" height="160" as="geometry"/>
@@ -17,15 +17,15 @@
                     <mxGeometry y="30" width="200" height="130" as="geometry"/>
                 </mxCell>
                 <mxCell id="message-table" value="Message" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="320" y="240" width="200" height="180" as="geometry"/>
+                    <mxGeometry x="320" y="240" width="200" height="230" as="geometry"/>
                 </mxCell>
-                <mxCell id="message-fields" value="PK: message_id BIGINT&#xa;FK: channel_id VARCHAR(255)&#xa;FK: user_id VARCHAR(255)&#xa;content TEXT NOT NULL&#xa;is_edited BOOLEAN DEFAULT FALSE&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="message-table" vertex="1">
-                    <mxGeometry y="30" width="200" height="150" as="geometry"/>
+                <mxCell id="message-fields" value="PK: message_id BIGINT&#xa;FK: channel_id VARCHAR(255)&#xa;FK: user_id VARCHAR(255)&#xa;content TEXT NOT NULL&#xa;is_edited BOOLEAN DEFAULT FALSE&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP&#xa;&#xa;// 実装予定機能&#xa;image_url VARCHAR(255) NULL" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="message-table" vertex="1">
+                    <mxGeometry y="30" width="200" height="200" as="geometry"/>
                 </mxCell>
                 <mxCell id="reaction-table" value="Reaction" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="600" y="240" width="200" height="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="reaction-fields" value="PK,FK: message_id BIGINT&#xa;PK,FK: user_id VARCHAR(255)&#xa;PK: emoji VARCHAR(10)&#xa;created_at TIMESTAMP" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="reaction-table" vertex="1">
+                <mxCell id="reaction-fields" value="PK,FK: message_id BIGINT&#xa;PK,FK: user_id VARCHAR(255)&#xa;PK: emoji VARCHAR(10)&#xa;created_at TIMESTAMP&#xa;&#xa;// 実装予定機能&#xa;// 絵文字リアクション種類拡充" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="reaction-table" vertex="1">
                     <mxGeometry y="30" width="200" height="130" as="geometry"/>
                 </mxCell>
                 <mxCell id="user-channel-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" parent="1" source="user-fields" target="channel-fields" edge="1">
@@ -39,6 +39,9 @@
                 </mxCell>
                 <mxCell id="message-reaction-rel" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERzeroToMany;endFill=1;startArrow=ERone;startFill=0;" parent="1" source="message-fields" target="reaction-fields" edge="1">
                     <mxGeometry width="100" height="100" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="title" value="EasyChat ER図" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1" vertex="1" parent="1">
+                    <mxGeometry x="215" y="10" width="330" height="30" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
