@@ -1,75 +1,53 @@
-# ER Diagram for Simple Chat App
+# EasyChat ER図テキスト表現
 
-            ┌──────────────────────────────┐
-            │           User               │
-            ├──────────────────────────────┤
-            │ PK: user_id VARCHAR(255)     │
-            │ username VARCHAR(255) UNIQUE  │
-            │ password_hash VARCHAR(255)    │
-            │ created_at TIMESTAMP         │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │ updated_at TIMESTAMP         │
-            │   ON UPDATE CURRENT_TIMESTAMP │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (user_id)      │
-            │ - UNIQUE KEY (username)      │
-            └──────────────────────────────┘
+## テーブル定義
 
-            ┌──────────────────────────────┐
-            │        Channel               │
-            ├──────────────────────────────┤
-            │ PK: channel_id VARCHAR(255)  │
-            │ name VARCHAR(255) NOT NULL   │
-            │ FK: created_by VARCHAR(255)  │
-            │ created_at TIMESTAMP         │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │ updated_at TIMESTAMP         │
-            │   ON UPDATE CURRENT_TIMESTAMP │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (channel_id)   │
-            │ - FK KEY (created_by)        │
-            └──────────────────────────────┘
+### User (ユーザー)
+- PK: user_id VARCHAR(255)
+- username VARCHAR(255) UNIQUE
+- password_hash VARCHAR(255)
+- created_at TIMESTAMP
+- updated_at TIMESTAMP
+- // 実装予定機能
+- avatar_url VARCHAR(255) NULL
+- status_message VARCHAR(255) NULL
+- theme_preference VARCHAR(20) NULL
 
-            ┌──────────────────────────────┐
-            │        Message               │
-            ├──────────────────────────────┤
-            │ PK: message_id BIGINT        │
-            │ FK: channel_id VARCHAR(255)  │
-            │ FK: user_id VARCHAR(255)     │
-            │ content TEXT NOT NULL        │
-            │ is_edited BOOLEAN DEFAULT FALSE│
-            │ created_at TIMESTAMP         │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │ updated_at TIMESTAMP         │
-            │   ON UPDATE CURRENT_TIMESTAMP │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (message_id)   │
-            │ - FK KEY (channel_id)        │
-            │ - FK KEY (user_id)          │
-            └──────────────────────────────┘
+### Channel (チャンネル)
+- PK: channel_id VARCHAR(255)
+- name VARCHAR(255) NOT NULL
+- FK: created_by VARCHAR(255) -> User.user_id
+- created_at TIMESTAMP
+- updated_at TIMESTAMP
 
-            ┌──────────────────────────────┐
-            │      Reaction                │
-            ├──────────────────────────────┤
-            │ PK,FK: message_id BIGINT     │
-            │ PK,FK: user_id VARCHAR(255)  │
-            │ PK: emoji VARCHAR(10)        │
-            │ created_at TIMESTAMP         │
-            │   DEFAULT CURRENT_TIMESTAMP   │
-            │                              │
-            │ Indexes:                     │
-            │ - PRIMARY KEY (message_id,   │
-            │   user_id, emoji)            │
-            │ - FK KEY (message_id)        │
-            │ - FK KEY (user_id)          │
-            └──────────────────────────────┘
+### Message (メッセージ)
+- PK: message_id BIGINT
+- FK: channel_id VARCHAR(255) -> Channel.channel_id
+- FK: user_id VARCHAR(255) -> User.user_id
+- content TEXT NOT NULL
+- is_edited BOOLEAN DEFAULT FALSE
+- created_at TIMESTAMP
+- updated_at TIMESTAMP
+- // 実装予定機能
+- image_url VARCHAR(255) NULL
 
-Relationships:
-- User (1) ---> (n) Channel: A user can create multiple channels
-- Channel (1) ---> (n) Message: A channel can have multiple messages
-- User (1) ---> (n) Message: A user can send multiple messages
-- Message (1) ---> (n) Reaction: A message can have multiple reactions
-- User (1) ---> (n) Reaction: A user can add multiple reactions
+### Reaction (リアクション)
+- PK, FK: message_id BIGINT -> Message.message_id
+- PK, FK: user_id VARCHAR(255) -> User.user_id
+- PK: emoji VARCHAR(10)
+- created_at TIMESTAMP
+- // 実装予定機能: 絵文字リアクション種類拡充
+
+## リレーションシップ
+
+1. User -(1)---(多)- Channel
+   ユーザーは複数のチャンネルを作成可能
+
+2. Channel -(1)---(多)- Message
+   各チャンネルには複数のメッセージが存在
+
+3. User -(1)---(多)- Message
+   ユーザーは複数のメッセージを投稿可能
+
+4. Message -(1)---(多)- Reaction
+   各メッセージには複数のリアクションが付けられる
