@@ -316,26 +316,45 @@ https://easychat-frub.onrender.com
    MYSQL_PORT=3306
 
    # アプリケーション設定
-   APP_PORT=3000
+   APP_PORT=5000
    ```
 
-4. アプリケーションの起動
+4. 仮想環境の作成と有効化
    ```bash
-   # 仮想環境の作成と有効化
    python -m venv venv
    source venv/bin/activate
+   ```
 
-   # 依存関係のインストール
+5. 依存関係のインストール
+   ```bash
+   # 主要な依存パッケージをインストール
+   pip install flask-sqlalchemy flask-migrate flask-socketio
+
+   # すべての依存関係をインストール
    pip install -r requirements.txt
+   ```
 
-   # 初回セットアップ時のマイグレーション
-   # 初めてセットアップする場合は以下の2コマンドを実行
-   flask db init      # 初回のみ
-   flask db migrate -m "Initial migration"  # 初回のみ
+6. データベースのマイグレーション
+   ```bash
+   # 仮想環境を有効化してから実行
+   source venv/bin/activate
 
-   # データベースのマイグレーション
+   # 既存のマイグレーションを適用
    flask db upgrade
+   ```
 
+   注意：初回のみ、マイグレーションの初期化が必要な場合は以下を実行
+   ```bash
+   flask db init
+   flask db migrate -m "Initial migration"
+   flask db upgrade
+   ```
+
+7. アプリケーションの起動
+   ```bash
+   # 仮想環境を有効化してから実行
+   source venv/bin/activate
+   
    # アプリケーションの起動
    python app.py
    ```
@@ -345,6 +364,7 @@ https://easychat-frub.onrender.com
 注意：
 - アプリケーションの起動は `flask run` ではなく `python app.py` コマンドを使用してください
 - アプリケーションはデフォルトで http://localhost:3000 で起動します（標準の5000ポートではありません）
+- エラー「No module named '...'」が発生した場合は、上記の依存関係のインストール手順を再確認してください
 
 ## 工夫したポイント 
 
