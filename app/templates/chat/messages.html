@@ -308,11 +308,11 @@
                 <div class="message-actions">
                     <button onclick="showEditForm('{{ message.id }}')" class="btn-action" title="編集">✎</button>
                     <form action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn-action btn-delete" onclick="return confirm('本当に削除しますか？')" title="削除">✕</button>
+                        <button type="button" class="btn-action btn-delete" onclick="submitDeleteForm(event, '{{ message.id }}')" title="削除">✕</button>
                     </form>
                 </div>
                 <div class="edit-form" id="edit-form-{{ message.id }}" style="display: none;">
-                    <form action="{{ url_for('chat.edit_message', message_id=message.id) }}" method="POST">
+                    <form action="/chat/messages/{{ message.id }}/edit" method="POST">
                         <input type="text" name="content" value="{{ message.content|striptags }}" required>
                         <button type="submit" class="btn-action">保存</button>
                         <button type="button" class="btn-action" onclick="hideEditForm('{{ message.id }}')">キャンセル</button>
@@ -593,11 +593,11 @@ function createMessageElement(message) {
             <div class="message-actions">
                 <button onclick="showEditForm('${message.id}')" class="btn-action" title="編集">✎</button>
                 <form action="/chat/messages/${message.id}/delete" method="POST" style="display: inline;">
-                    <button type="submit" class="btn-action btn-delete" onclick="return confirm('本当に削除しますか？')" title="削除">✕</button>
+                    <button type="button" class="btn-action btn-delete" onclick="submitDeleteForm(event, '${message.id}')" title="削除">✕</button>
                 </form>
             </div>
             <div class="edit-form" id="edit-form-${message.id}" style="display: none;">
-                <form action="/chat/messages/${message.id}" method="POST">
+                <form action="/chat/messages/${message.id}/edit" method="POST">
                     <input type="text" name="content" value="${message.raw_content || message.content}" required>
                     <button type="submit" class="btn-action">保存</button>
                     <button type="button" class="btn-action" onclick="hideEditForm('${message.id}')">キャンセル</button>
@@ -845,6 +845,48 @@ function showEditChannelModal(channelId, channelName) {
 function hideEditChannelModal() {
     const modal = document.getElementById('edit-channel-modal');
     modal.classList.remove('show');
+}
+
+// メッセージの削除を処理する関数
+function submitDeleteForm(event, messageId) {
+    event.preventDefault();
+    if (!confirm('本当に削除しますか？')) {
+        return false;
+    }
+    
+    // フォームを取得
+    const form = event.target.closest('form');
+    const formData = new FormData(form);
+    
+    // フェッチAPIでリクエスト送信
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('メッセージ削除リクエスト成功');
+            // 成功したらメッセージ要素を削除
+            const messageElement = document.getElementById(`message-${messageId}`);
+            if (messageElement) {
+                messageElement.remove();
+            }
+            showFlashMessage('メッセージを削除しました', 'success');
+        } else {
+            console.error('メッセージ削除エラー:', response.status);
+            showFlashMessage('メッセージの削除に失敗しました', 'error');
+            // エラーの詳細をレスポンスから取得
+            return response.text().then(text => {
+                console.error('エラー詳細:', text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('削除リクエストエラー:', error);
+        showFlashMessage('メッセージの削除でエラーが発生しました', 'error');
+    });
+    
+    return false;
 }
 </script>
 {% endblock %}

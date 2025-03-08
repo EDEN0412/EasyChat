@@ -164,12 +164,27 @@ def send_message():
     # 通常のフォーム送信の場合はリダイレクト
     return redirect(url_for('chat.messages', channel_id=channel_id))
 
-@bp.route('/messages/<string:message_id>/edit', methods=['POST'])
+@bp.route('/messages/<string:message_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_message(message_id):
     """メッセージを編集する"""
     content = request.form.get('content', '').strip()
     
+    if request.method == 'GET':
+        # GET リクエストの場合、編集フォームを表示
+        message = Message.query.get(message_id)
+        if not message:
+            flash('メッセージが見つかりません', 'error')
+            return redirect(url_for('chat.messages'))
+        
+        if message.user_id != session['user_id']:
+            flash('自分のメッセージのみ編集できます', 'error')
+            return redirect(url_for('chat.messages'))
+            
+        # メッセージの編集ページを返す（必要に応じて実装）
+        return redirect(url_for('chat.messages', channel_id=message.channel_id))
+    
+    # POSTリクエストの処理（既存のコード）
     if not content:
         flash('メッセージを入力してください', 'error')
         return redirect(url_for('chat.messages'))
@@ -207,27 +222,41 @@ def edit_message(message_id):
 @login_required
 def delete_message(message_id):
     """メッセージを削除する"""
-    message = Message.query.get(message_id)
-    
-    if not message:
-        flash('メッセージが見つかりません', 'error')
+    try:
+        message = Message.query.get(message_id)
+        
+        if not message:
+            flash('メッセージが見つかりません', 'error')
+            return redirect(url_for('chat.messages'))
+        
+        if message.user_id != session['user_id']:
+            flash('自分のメッセージのみ削除できます', 'error')
+            return redirect(url_for('chat.messages'))
+        
+        channel_id = message.channel_id
+        
+        # 関連するリアクションを先に削除
+        try:
+            Reaction.query.filter_by(message_id=message_id).delete()
+        except Exception as e:
+            print(f"リアクション削除エラー: {str(e)}")
+        
+        db.session.delete(message)
+        db.session.commit()
+        
+        # WebSocketでメッセージ削除を通知
+        socketio.emit('message_deleted', {
+            'message_id': message_id
+        }, room=channel_id)
+        
+        flash('メッセージを削除しました', 'success')
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+    except Exception as e:
+        print(f"メッセージ削除エラー: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash('メッセージの削除中にエラーが発生しました', 'error')
         return redirect(url_for('chat.messages'))
-    
-    if message.user_id != session['user_id']:
-        flash('自分のメッセージのみ削除できます', 'error')
-        return redirect(url_for('chat.messages'))
-    
-    channel_id = message.channel_id
-    db.session.delete(message)
-    db.session.commit()
-    
-    # WebSocketでメッセージ削除を通知
-    socketio.emit('message_deleted', {
-        'message_id': message_id
-    }, room=channel_id)
-    
-    flash('メッセージを削除しました', 'success')
-    return redirect(url_for('chat.messages', channel_id=channel_id))
 
 @bp.route('/messages/<string:message_id>', methods=['DELETE'])
 @login_required
@@ -248,7 +277,9 @@ def delete_message_api(message_id):
     db.session.commit()
     
     # WebSocketで削除をブロードキャスト
-    socketio.emit('delete_message', {'message_id': message_id})
+    socketio.emit('message_deleted', {
+        'message_id': message_id
+    }, room=channel_id)
     
     return jsonify({'message': 'Message deleted successfully'})
 

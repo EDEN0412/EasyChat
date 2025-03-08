@@ -30,7 +30,7 @@ class Config:
     else:
         # MySQL用のURI
         SQLALCHEMY_DATABASE_URI = (
-            f"mysql://{os.getenv('MYSQL_USER')}@"
+            f"mysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@"
             f"{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
         )
     
@@ -59,7 +59,7 @@ class TestConfig(Config):
     TESTING = True
     # テスト用データベース設定を明示的に指定
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql://{os.getenv('MYSQL_USER')}@"
+        f"mysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@"
         f"{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/test_chatapp"
     )
     WTF_CSRF_ENABLED = False
