@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort, current_app
 from app.models import Message, Channel, User, Reaction
 from app import db, socketio
 from datetime import datetime, UTC
@@ -7,6 +7,8 @@ import uuid
 from functools import wraps
 import re
 import pytz
+import os
+from werkzeug.utils import secure_filename
 
 bp = Blueprint('chat', __name__)
 
@@ -66,6 +68,7 @@ def format_message(message):
         'username': message.author.username,
         'created_at': created_at_jst.strftime('%Y年%m月%d日 %H:%M'),
         'is_edited': message.is_edited,
+        'image_url': message.image_url,
         'reactions': format_reactions(message)
     }
 
@@ -125,14 +128,35 @@ def send_message():
     content = request.form.get('message')
     channel_id = request.form.get('channel_id')
     
-    if not content:
+    if not content and 'image' not in request.files:
         if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'error': 'メッセージを入力してください'}), 400
-        flash('メッセージを入力してください')
+            return jsonify({'error': 'メッセージまたは画像を入力してください'}), 400
+        flash('メッセージまたは画像を入力してください')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
     # チャンネルの存在確認
     channel = Channel.query.get_or_404(channel_id)
+    
+    # 画像のアップロード処理
+    image_url = None
+    if 'image' in request.files:
+        image_file = request.files['image']
+        if image_file and image_file.filename:
+            # 安全なファイル名を生成
+            filename = secure_filename(image_file.filename)
+            # 拡張子を取得
+            ext = os.path.splitext(filename)[1]
+            # UUIDを使用した一意のファイル名を生成
+            unique_filename = f"{uuid.uuid4()}{ext}"
+            # 保存先のパスを作成
+            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            # ディレクトリが存在することを確認
+            os.makedirs(upload_dir, exist_ok=True)
+            # ファイルを保存
+            image_path = os.path.join(upload_dir, unique_filename)
+            image_file.save(image_path)
+            # 静的ファイルへのURLを設定
+            image_url = f"/static/uploads/{unique_filename}"
     
     # メンションされたユーザーを検出
     mentioned_usernames = []
@@ -145,6 +169,7 @@ def send_message():
         user_id=session['user_id'],
         channel_id=channel_id,
         content=content,
+        image_url=image_url,
         created_at=datetime.now(UTC)
     )
     db.session.add(message)
