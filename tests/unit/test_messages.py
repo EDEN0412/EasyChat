@@ -5,6 +5,8 @@ from app.models import User, Channel, Message, Reaction
 from app.auth import create_user
 from datetime import datetime, UTC
 import uuid
+import io
+from PIL import Image
 
 @pytest.fixture
 def app():
@@ -83,6 +85,46 @@ def test_send_message(auth_client, test_channel, app):
             'channel_id': test_channel
         }, follow_redirects=True)
         assert b'message' in response.data.lower()
+
+def test_upload_image(auth_client, test_channel, app):
+    """画像アップロード機能のテスト"""
+    with app.app_context():
+        # テスト用の画像を作成
+        img = Image.new('RGB', (100, 100), color='red')
+        img_io = io.BytesIO()
+        img.save(img_io, 'JPEG')
+        img_io.seek(0)
+        
+        # 画像のみのメッセージを送信
+        response = auth_client.post('/chat/send', data={
+            'channel_id': test_channel,
+            'image': (img_io, 'test_image.jpg')
+        }, follow_redirects=True)
+        assert response.status_code == 200
+        
+        # 画像URLを含むメッセージがデータベースに保存されたことを確認
+        message = Message.query.filter_by(content='').first()
+        assert message is not None
+        assert message.image_url is not None
+        
+        # 2回目のテスト用に新しい画像を作成
+        img2 = Image.new('RGB', (100, 100), color='blue')
+        img_io2 = io.BytesIO()
+        img2.save(img_io2, 'JPEG')
+        img_io2.seek(0)
+        
+        # テキストと画像の両方を含むメッセージを送信
+        response = auth_client.post('/chat/send', data={
+            'message': 'Image with text',
+            'channel_id': test_channel,
+            'image': (img_io2, 'test_image2.jpg')
+        }, follow_redirects=True)
+        assert response.status_code == 200
+        
+        # テキストと画像URLの両方を含むメッセージがデータベースに保存されたことを確認
+        message = Message.query.filter_by(content='Image with text').first()
+        assert message is not None
+        assert message.image_url is not None
 
 def test_edit_message(auth_client, test_user, test_channel, app):
     """メッセージ編集のテスト"""

@@ -1,8 +1,9 @@
 import pytest
 from flask import url_for
 from app import create_app, db
-from app.models import User
+from app.models import User, Channel
 from datetime import datetime, UTC
+import uuid
 
 @pytest.fixture
 def app():
@@ -102,16 +103,32 @@ def test_channel_validation_errors(client, test_user):
     }, follow_redirects=True)
     assert 'チャンネル名は必須です' in response.get_data(as_text=True)
 
-def test_message_validation_errors(client, test_user):
+def test_message_validation_errors(client, test_user, app):
     """メッセージ送信時のバリデーションエラーのテスト"""
+    from app.models import Channel
+    from datetime import datetime, UTC
+    import uuid
+    
     # ログイン
     with client.session_transaction() as session:
         session['user_id'] = test_user['id']
         session['username'] = test_user['username']
+    
+    # テスト用のチャンネルを作成
+    with app.app_context():
+        channel = Channel(
+            id='test-channel-id',
+            name='testchannel',
+            created_by=test_user['id'],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
+        db.session.add(channel)
+        db.session.commit()
 
-    # 空のメッセージを送信
+    # 空のメッセージと画像なしで送信
     response = client.post('/chat/send', data={
         'message': '',
         'channel_id': 'test-channel-id'
     }, follow_redirects=True)
-    assert 'メッセージを入力してください' in response.get_data(as_text=True) 
+    assert 'メッセージまたは画像を入力してください' in response.get_data(as_text=True) 
