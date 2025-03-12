@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>シンプルテスト</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; }
+        label { display: block; margin-bottom: 5px; }
+        input, button { margin-bottom: 15px; padding: 5px; }
+        #result { padding: 10px; background: #f0f0f0; }
+        pre { white-space: pre-wrap; overflow-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>メッセージ送信テスト</h1>
+    
+    <form method="POST" enctype="multipart/form-data" id="test-form">
+        <input type="hidden" name="channel_id" value="{{ channel_id }}">
+        
+        <div>
+            <label for="message">メッセージ:</label>
+            <input type="text" id="message" name="message">
+        </div>
+        
+        <div>
+            <label for="image">画像:</label>
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        
+        <div id="debug-info"></div>
+        
+        <button type="submit">送信</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+    document.getElementById('test-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const resultDiv = document.getElementById('result');
+        const debugDiv = document.getElementById('debug-info');
+        
+        // デバッグ情報表示
+        debugDiv.innerHTML = '';
+        for (let pair of formData.entries()) {
+            const value = pair[1] instanceof File 
+                ? `File(${pair[1].name}, ${pair[1].type}, ${pair[1].size}bytes)` 
+                : pair[1];
+            debugDiv.innerHTML += `<div>${pair[0]}: ${value}</div>`;
+        }
+        
+        // クリア
+        resultDiv.innerHTML = '<div>送信中...</div>';
+        
+        fetch('/chat/send', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => {
+            resultDiv.innerHTML = '応答ステータス: ' + response.status;
+            return response.text().then(text => {
+                try {
+                    // JSONとしてパース
+                    return JSON.parse(text);
+                } catch (e) {
+                    // HTMLなどJSON以外の場合
+                    throw new Error(`サーバーからの応答を解析できませんでした。応答内容: ${text.substring(0, 100)}...`);
+                }
+            });
+        })
+        .then(data => {
+            resultDiv.innerHTML += '<br>応答データ: <pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        })
+        .catch(error => {
+            resultDiv.innerHTML += '<br>エラー: ' + error.message;
+        });
+    });
+    </script>
+</body>
+</html> 

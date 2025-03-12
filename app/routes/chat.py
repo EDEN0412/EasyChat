@@ -9,11 +9,36 @@ import re
 import pytz
 import os
 from werkzeug.utils import secure_filename
+import traceback
 
-bp = Blueprint('chat', __name__)
+bp = Blueprint('chat', __name__, url_prefix='/chat')
 
 # 東京タイムゾーンの定義
 JST = pytz.timezone('Asia/Tokyo')
+
+# 許可されるファイル拡張子
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    """ファイルが許可された拡張子か確認する"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# アップロードフォルダの設定
+def setup_upload_folder():
+    """アップロードフォルダが存在することを確認"""
+    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True)
+    current_app.config['UPLOAD_FOLDER'] = upload_folder
+    return True
+
+# リクエスト前の処理
+@bp.before_app_request
+def before_request():
+    """リクエスト前の処理"""
+    # アップロードフォルダの確認
+    if 'UPLOAD_FOLDER' not in current_app.config:
+        setup_upload_folder()
 
 def login_required(f):
     @wraps(f)
@@ -125,69 +150,156 @@ def format_mentions(content):
 @bp.route('/send', methods=['POST'])
 @login_required
 def send_message():
-    content = request.form.get('message')
-    channel_id = request.form.get('channel_id')
-    
-    if not content and 'image' not in request.files:
-        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'error': 'メッセージまたは画像を入力してください'}), 400
-        flash('メッセージまたは画像を入力してください')
+    """メッセージを送信"""
+    try:
+        # デバッグ情報
+        print("=" * 50)
+        print("リクエストデータ:")
+        print(f"フォームデータ: {request.form}")
+        print(f"ファイル: {request.files}")
+        print(f"ヘッダー: {request.headers}")
+        
+        # チャンネルIDの取得
+        channel_id = request.form.get('channel_id')
+        print(f"チャンネルID: {channel_id}")
+        
+        if not channel_id:
+            error_msg = 'チャンネルIDが指定されていません'
+            print(f"エラー: {error_msg}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'error')
+            return redirect(url_for('chat.messages'))
+        
+        # メッセージ内容と画像の取得
+        content = request.form.get('message', '').strip()
+        image_file = request.files.get('image')
+        print(f"メッセージ内容: {content}")
+        print(f"画像ファイル: {image_file.filename if image_file else None}")
+        
+        # メッセージも画像も空の場合はエラー
+        if not content and (not image_file or not image_file.filename):
+            error_msg = 'メッセージまたは画像を入力してください'
+            print(f"エラー: {error_msg}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'error')
+            return redirect(url_for('chat.messages', channel_id=channel_id))
+        
+        # 画像処理
+        image_url = None
+        if image_file and image_file.filename:
+            try:
+                # 画像形式チェック
+                if not allowed_file(image_file.filename):
+                    error_msg = '許可されていないファイル形式です'
+                    print(f"エラー: {error_msg} (ファイル名: {image_file.filename})")
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'error': error_msg}), 400
+                    flash(error_msg, 'error')
+                    return redirect(url_for('chat.messages', channel_id=channel_id))
+                
+                # アップロードディレクトリのチェック
+                upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                if not upload_folder:
+                    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    current_app.config['UPLOAD_FOLDER'] = upload_folder
+                    print(f"アップロードディレクトリを作成: {upload_folder}")
+                
+                # 画像保存
+                filename = secure_filename(image_file.filename)
+                random_filename = f"{uuid.uuid4().hex}_{filename}"
+                image_path = os.path.join(upload_folder, random_filename)
+                print(f"画像保存先: {image_path}")
+                
+                image_file.save(image_path)
+                print(f"画像保存成功: {os.path.exists(image_path)}")
+                
+                image_url = url_for('static', filename=f'uploads/{random_filename}')
+                print(f"画像URL: {image_url}")
+            except Exception as e:
+                error_msg = f'画像アップロードエラー: {str(e)}'
+                print(f"例外: {error_msg}")
+                print(traceback.format_exc())
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'error': error_msg}), 500
+                flash(error_msg, 'error')
+                return redirect(url_for('chat.messages', channel_id=channel_id))
+        
+        # メッセージ作成
+        message = Message(
+            id=str(uuid.uuid4()),
+            content=content,
+            user_id=session.get('user_id'),
+            channel_id=channel_id,
+            image_url=image_url
+        )
+        
+        # メンション処理
+        mentioned_usernames = []
+        if content:
+            for match in re.finditer(r'@(\w+)', content):
+                username = match.group(1)
+                user = User.query.filter_by(username=username).first()
+                if user:
+                    mentioned_usernames.append(username)
+        
+        # データベースに保存
+        try:
+            db.session.add(message)
+            db.session.commit()
+            print(f"メッセージをDBに保存: ID={message.id}")
+        except Exception as e:
+            error_msg = f'データベース保存エラー: {str(e)}'
+            print(f"例外: {error_msg}")
+            print(traceback.format_exc())
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 500
+            flash(error_msg, 'error')
+            return redirect(url_for('chat.messages', channel_id=channel_id))
+        
+        # メッセージフォーマット
+        formatted_message = format_message(message)
+        formatted_message['mentions'] = mentioned_usernames
+        formatted_message['channel_id'] = channel_id  # channel_idを明示的に追加
+        
+        # WebSocketでブロードキャスト
+        try:
+            socketio.emit('new_message', formatted_message, room=channel_id)
+            print(f"WebSocketでメッセージを送信: room={channel_id}")
+        except Exception as e:
+            print(f"WebSocket送信エラー: {str(e)}")
+            print(traceback.format_exc())
+            # WebSocketエラーは無視して処理を続行
+        
+        # AJAXリクエストの場合はJSONを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            response_data = {
+                'status': 'success',
+                'message': 'メッセージを送信しました',
+                'data': formatted_message
+            }
+            print(f"JSONレスポンス: {response_data}")
+            return jsonify(response_data)
+        
+        print("リダイレクトレスポンス")
+        flash('メッセージを送信しました', 'success')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
-    # チャンネルの存在確認
-    channel = Channel.query.get_or_404(channel_id)
-    
-    # 画像のアップロード処理
-    image_url = None
-    if 'image' in request.files:
-        image_file = request.files['image']
-        if image_file and image_file.filename:
-            # 安全なファイル名を生成
-            filename = secure_filename(image_file.filename)
-            # 拡張子を取得
-            ext = os.path.splitext(filename)[1]
-            # UUIDを使用した一意のファイル名を生成
-            unique_filename = f"{uuid.uuid4()}{ext}"
-            # 保存先のパスを作成
-            upload_dir = os.path.join(current_app.static_folder, 'uploads')
-            # ディレクトリが存在することを確認
-            os.makedirs(upload_dir, exist_ok=True)
-            # ファイルを保存
-            image_path = os.path.join(upload_dir, unique_filename)
-            image_file.save(image_path)
-            # 静的ファイルへのURLを設定
-            image_url = f"/static/uploads/{unique_filename}"
-    
-    # メンションされたユーザーを検出
-    mentioned_usernames = []
-    mention_pattern = r'@(\w+)'
-    mentioned_usernames = re.findall(mention_pattern, content)
-    
-    # メッセージを保存
-    message = Message(
-        id=str(uuid.uuid4()),
-        user_id=session['user_id'],
-        channel_id=channel_id,
-        content=content,
-        image_url=image_url,
-        created_at=datetime.now(UTC)
-    )
-    db.session.add(message)
-    db.session.commit()
-    
-    # メンション情報を付加
-    formatted_message = format_message(message)
-    formatted_message['mentions'] = mentioned_usernames
-    
-    # WebSocketでメッセージをブロードキャスト
-    socketio.emit('new_message', formatted_message, room=channel_id)
-    
-    # AJAXリクエストの場合はJSONを返す
-    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify(formatted_message)
-    
-    # 通常のフォーム送信の場合はリダイレクト
-    return redirect(url_for('chat.messages', channel_id=channel_id))
+    except Exception as e:
+        # エラーログ
+        error_msg = f"メッセージ送信エラー: {str(e)}"
+        print(f"予期しない例外: {error_msg}")
+        print(traceback.format_exc())
+        current_app.logger.error(error_msg)
+        
+        # AJAXリクエストの場合はJSONでエラー返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': error_msg}), 500
+        
+        flash(error_msg, 'error')
+        return redirect(url_for('chat.messages', channel_id=channel_id if channel_id else None))
 
 @bp.route('/messages/<string:message_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -458,4 +570,13 @@ def edit_channel(channel_id):
     except Exception as e:
         db.session.rollback()
         flash('チャンネル名の更新に失敗しました', 'error')
-        return redirect(url_for('chat.messages', channel_id=channel_id)) 
+        return redirect(url_for('chat.messages', channel_id=channel_id))
+
+# 新しいテストルートの追加
+@bp.route('/simple_test')
+@login_required
+def simple_test():
+    """シンプルなテストページ"""
+    # デフォルトチャンネルを取得
+    default_channel = get_or_create_default_channel()
+    return render_template('simple_test.html', channel_id=default_channel.id) 

@@ -411,10 +411,10 @@
         
         <div class="message-form">
             <form method="POST" action="{{ url_for('chat.send_message') }}" id="message-form" enctype="multipart/form-data">
-                <input type="hidden" name="channel_id" value="{{ current_channel.id }}">
+                <input type="hidden" name="channel_id" id="current-channel-id" value="{{ current_channel.id }}">
                 <div class="form-group">
                     <div class="mention-container">
-                        <input type="text" id="message" name="message" required 
+                        <input type="text" id="message" name="message" 
                                placeholder="メッセージを入力..." 
                                onkeyup="handleInput(this)">
                         <div id="mention-suggestions" class="mention-suggestions"></div>
@@ -479,15 +479,45 @@ const currentUserId = '{{ session.get("user_id") }}';
 // メッセージ送信のイベントハンドラ
 messageForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    const formData = new FormData(messageForm);
+    
+    console.log('メッセージ送信開始');
+    
     const messageInput = document.getElementById('message');
     const message = messageInput.value.trim();
+    const imageFile = document.getElementById('image-upload').files[0];
+    const channelId = document.getElementById('current-channel-id').value;
     
-    if (!message) return; // 空メッセージは送信しない
+    console.log('送信内容:', { 
+        message: message, 
+        hasImage: !!imageFile, 
+        imageFileName: imageFile ? imageFile.name : null,
+        imageSize: imageFile ? imageFile.size : null,
+        imageType: imageFile ? imageFile.type : null,
+        channelId: channelId
+    });
+    
+    // メッセージが空で、かつ画像も選択されていない場合は送信しない
+    if (!message && !imageFile) {
+        showFlashMessage('メッセージまたは画像を入力してください', 'error');
+        return;
+    }
+    
+    // フォームデータ作成と確認
+    const formData = new FormData(messageForm);
+    console.log('フォームデータ確認:');
+    for (let pair of formData.entries()) {
+        // ファイルオブジェクトの場合は特別に処理
+        if (pair[1] instanceof File) {
+            console.log(pair[0] + ': File(' + pair[1].name + ', ' + pair[1].type + ', ' + pair[1].size + 'bytes)');
+        } else {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+    }
     
     // 送信中は入力を無効化
     messageInput.disabled = true;
     
+    // 送信
     fetch('{{ url_for("chat.send_message") }}', {
         method: 'POST',
         headers: {
@@ -496,33 +526,46 @@ messageForm.addEventListener('submit', function(e) {
         body: formData
     })
     .then(response => {
-        if (response.ok) {
-            return response.json();
+        console.log('サーバーからの応答:', response.status);
+        if (!response.ok) {
+            return response.json().then(data => {
+                console.error('エラーレスポンス:', data);
+                throw new Error(data.error || 'メッセージの送信に失敗しました');
+            }).catch(e => {
+                // JSONパースエラーの場合
+                if (e instanceof SyntaxError) {
+                    throw new Error('サーバーからの応答を処理できませんでした。');
+                }
+                throw e; // その他のエラーはそのまま再スロー
+            });
         }
-        throw new Error('メッセージの送信に失敗しました');
+        return response.json();
     })
     .then(data => {
-        console.log('メッセージ送信成功:', data.id);
+        console.log('送信成功:', data);
         
-        // フラッシュメッセージを表示
+        // 成功メッセージ
         showFlashMessage('メッセージを送信しました', 'success');
         
-        // 既に同じIDのメッセージが表示されていないか確認
-        if (!document.getElementById(`message-${data.id}`)) {
-            // 自分のメッセージを即時表示（WebSocketの受信を待たない）
-            const messageElement = createMessageElement(data);
-            messagesArea.appendChild(messageElement);
-            scrollToBottom();
-        }
-        
-        // フォームをリセットして入力欄にフォーカス
+        // フォームクリア
         messageForm.reset();
         messageInput.disabled = false;
         messageInput.focus();
+        
+        // 画像プレビュークリア
+        const imagePreview = document.getElementById('image-preview');
+        imagePreview.innerHTML = '';
+        imagePreview.style.display = 'none';
+        
+        // 自分のメッセージをDOMに追加
+        if (data.data) {
+            const messageElement = createMessageElement(data.data);
+            messagesArea.appendChild(messageElement);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
     })
     .catch(error => {
-        console.error('Error:', error);
-        // エラー時もフラッシュメッセージを表示
+        console.error('送信エラー:', error);
         showFlashMessage(error.message, 'error');
         messageInput.disabled = false;
     });
@@ -530,26 +573,53 @@ messageForm.addEventListener('submit', function(e) {
 
 // 新規メッセージ受信時の処理
 socket.on('new_message', function(message) {
-    // 自分が送信したメッセージは既に表示されているので無視
-    if (message.user_id === currentUserId) {
-        console.log('自分のメッセージなので重複表示を防止:', message.id);
-        return;
-    }
+    console.log('新規メッセージ受信:', message);
     
-    // 既に同じIDのメッセージが表示されていないか確認
-    if (document.getElementById(`message-${message.id}`)) {
-        console.log('既に表示済みのメッセージ:', message.id);
-        return;
-    }
-    
-    const messageElement = createMessageElement(message);
-    messagesArea.appendChild(messageElement);
-    scrollToBottom();
-    
-    // 自分がメンションされているか確認
-    if (message.mentions && message.mentions.includes('{{ session.get("username") }}')) {
-        // メンションされた場合、通知効果を適用
-        highlightMention(messageElement);
+    try {
+        // メッセージの形式を確認
+        if (!message || !message.id || !message.channel_id) {
+            console.error('無効なメッセージデータを受信:', message);
+            return;
+        }
+        
+        // 現在のチャンネルIDを取得
+        const currentChannelId = document.getElementById('current-channel-id').value;
+        
+        // 別のチャンネルのメッセージは無視
+        if (message.channel_id !== currentChannelId) {
+            console.log('別チャンネルのメッセージなので表示しません:', message.channel_id);
+            return;
+        }
+        
+        // 自分が送信したメッセージは既に表示されているので無視
+        if (message.user_id === currentUserId) {
+            console.log('自分のメッセージなので重複表示を防止:', message.id);
+            return;
+        }
+        
+        // 既存のメッセージなら追加しない
+        if (document.getElementById(`message-${message.id}`)) {
+            console.log('既に表示済みのメッセージ:', message.id);
+            return;
+        }
+        
+        // メッセージ要素を作成して追加
+        const messageElement = createMessageElement(message);
+        messagesArea.appendChild(messageElement);
+        
+        // 最下部にスクロール
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        
+        // 自分宛てのメンションがあれば通知効果を適用
+        const username = '{{ session.get("username") }}';
+        if (message.content && message.content.includes(`@${username}`)) {
+            messageElement.classList.add('mentioned');
+            showFlashMessage(`${message.username}があなたをメンションしました`, 'info');
+            // 音声通知
+            playNotificationSound();
+        }
+    } catch (error) {
+        console.error('メッセージ処理エラー:', error);
     }
 });
 
@@ -652,26 +722,42 @@ function scrollToBottom() {
 
 // 新規メッセージ要素の作成
 function createMessageElement(message) {
+    // 必須プロパティがない場合は空要素を返す
+    if (!message || !message.id) {
+        console.error('無効なメッセージデータ');
+        return document.createElement('div');
+    }
+    
+    // メッセージ要素を作成
     const div = document.createElement('div');
     div.className = `message ${message.user_id === currentUserId ? 'message-own' : ''}`;
     div.id = `message-${message.id}`;
     
-    let messageHTML = `
+    // メッセージHTML生成
+    let html = `
         <div class="message-header">
-            <span class="username">${message.username}</span>
-            <span class="timestamp">${message.created_at}
+            <span class="username">${message.username || ''}</span>
+            <span class="timestamp">${message.created_at || ''}
                 ${message.is_edited ? '<span class="edited-mark">（編集済み）</span>' : ''}
             </span>
         </div>
         <div class="message-content" id="message-content-${message.id}">
-            ${message.content}
-            ${message.image_url ? `
+            ${message.content || ''}
+    `;
+    
+    // 画像があれば追加
+    if (message.image_url) {
+        html += `
             <div class="message-image">
                 <a href="${message.image_url}" target="_blank">
                     <img src="${message.image_url}" alt="添付画像" style="max-width: 300px; max-height: 300px; margin-top: 10px; border-radius: 5px;">
                 </a>
             </div>
-            ` : ''}
+        `;
+    }
+    
+    // リアクション部分
+    html += `
         </div>
         <div class="reactions" id="reactions-${message.id}">
             <div class="reaction-picker">
@@ -687,9 +773,9 @@ function createMessageElement(message) {
         </div>
     `;
     
-    // 自分のメッセージの場合は編集・削除ボタンを追加
+    // 自分のメッセージなら編集・削除ボタンを追加
     if (message.user_id === currentUserId) {
-        messageHTML += `
+        html += `
             <div class="message-actions">
                 <button onclick="showEditForm('${message.id}')" class="btn-action" title="編集">✎</button>
                 <form action="/chat/messages/${message.id}/delete" method="POST" style="display: inline;">
@@ -698,7 +784,7 @@ function createMessageElement(message) {
             </div>
             <div class="edit-form" id="edit-form-${message.id}" style="display: none;">
                 <form action="/chat/messages/${message.id}/edit" method="POST">
-                    <input type="text" name="content" value="${message.raw_content || message.content}" required>
+                    <input type="text" name="content" value="${message.raw_content || message.content || ''}" required>
                     <button type="submit" class="btn-action">保存</button>
                     <button type="button" class="btn-action" onclick="hideEditForm('${message.id}')">キャンセル</button>
                 </form>
@@ -706,7 +792,7 @@ function createMessageElement(message) {
         `;
     }
     
-    div.innerHTML = messageHTML;
+    div.innerHTML = html;
     return div;
 }
 
@@ -993,25 +1079,22 @@ function submitDeleteForm(event, messageId) {
 document.addEventListener('DOMContentLoaded', function() {
     const imageUpload = document.getElementById('image-upload');
     const imagePreview = document.getElementById('image-preview');
-    const imageButton = document.getElementById('image-button');
-    const messageInput = document.getElementById('message');
-    
-    // ボタンの存在確認（デバッグ用）
-    if (imageButton) {
-        console.log('画像アップロードボタンが存在します');
-        // ボタンが表示されていることを確認
-        imageButton.style.display = 'inline-flex';
-    } else {
-        console.error('画像アップロードボタンが見つかりません');
-    }
     
     // 画像選択時のプレビュー表示
     imageUpload.addEventListener('change', function() {
         const file = this.files[0];
+        
         if (file) {
+            // ファイルタイプ確認
+            if (!file.type.match('image.*')) {
+                showFlashMessage('画像ファイルを選択してください', 'error');
+                imageUpload.value = '';
+                return;
+            }
+            
+            // プレビュー表示
             const reader = new FileReader();
             reader.onload = function(e) {
-                // プレビュー要素を作成
                 imagePreview.innerHTML = `
                     <div class="preview-container">
                         <img src="${e.target.result}" style="max-width: 200px; max-height: 200px;">
@@ -1020,16 +1103,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 imagePreview.style.display = 'block';
                 
-                // 削除ボタンのイベントリスナー
+                // 削除ボタン
                 document.getElementById('remove-image').addEventListener('click', function() {
                     imageUpload.value = '';
                     imagePreview.innerHTML = '';
                     imagePreview.style.display = 'none';
                 });
-            }
+            };
             reader.readAsDataURL(file);
         }
     });
 });
+
+// 通知音再生
+function playNotificationSound() {
+    try {
+        const audio = new Audio('/static/sounds/notification.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log('通知音再生エラー:', e));
+    } catch (e) {
+        console.log('通知音機能エラー:', e);
+    }
+}
 </script>
 {% endblock %}

@@ -11,6 +11,7 @@ class Message(db.Model):
     channel_id = Column(String(255), ForeignKey('channels.id'), nullable=False)
     user_id = Column(String(255), ForeignKey('users.id'), nullable=False)
     content = Column(Text, nullable=False)
+    image_url = Column(String(255), nullable=True)
     is_edited = Column(Boolean, default=False)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
