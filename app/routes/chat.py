@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort, current_app, send_from_directory
 from app.models import Message, Channel, User, Reaction
 from app import db, socketio
 from datetime import datetime, UTC
@@ -8,6 +8,7 @@ from functools import wraps
 import re
 import pytz
 import os
+import tempfile
 from werkzeug.utils import secure_filename
 import traceback
 
@@ -19,6 +20,10 @@ JST = pytz.timezone('Asia/Tokyo')
 # 許可されるファイル拡張子
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
+# 画像保存用の一時ディレクトリ
+UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'easychat_uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 def allowed_file(filename):
     """ファイルが許可された拡張子か確認する"""
     return '.' in filename and \
@@ -27,9 +32,9 @@ def allowed_file(filename):
 # アップロードフォルダの設定
 def setup_upload_folder():
     """アップロードフォルダが存在することを確認"""
-    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
-    current_app.config['UPLOAD_FOLDER'] = upload_folder
+    # 一時ディレクトリを使用
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    current_app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     return True
 
 # リクエスト前の処理
@@ -115,8 +120,9 @@ def messages(channel_id=None):
     # チャンネルのメッセージを取得
     messages = Message.query.filter_by(channel_id=channel_id).order_by(Message.created_at.asc()).all()
     
-    # 各メッセージのコンテンツにメンションタグを適用
+    # 各メッセージの処理
     for message in messages:
+        # メンションタグを適用
         message.display_content = format_mentions(message.content)
     
     # 現在のチャンネルに投稿したユーザーのリストを取得（重複なし）
@@ -200,12 +206,9 @@ def send_message():
                     return redirect(url_for('chat.messages', channel_id=channel_id))
                 
                 # アップロードディレクトリのチェック
-                upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                if not upload_folder:
-                    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
-                    os.makedirs(upload_folder, exist_ok=True)
-                    current_app.config['UPLOAD_FOLDER'] = upload_folder
-                    print(f"アップロードディレクトリを作成: {upload_folder}")
+                upload_folder = current_app.config.get('UPLOAD_FOLDER', UPLOAD_FOLDER)
+                os.makedirs(upload_folder, exist_ok=True)
+                print(f"アップロードディレクトリ: {upload_folder}")
                 
                 # 画像保存
                 filename = secure_filename(image_file.filename)
@@ -216,8 +219,10 @@ def send_message():
                 image_file.save(image_path)
                 print(f"画像保存成功: {os.path.exists(image_path)}")
                 
-                image_url = url_for('static', filename=f'uploads/{random_filename}')
+                # 画像配信用のルートを作成
+                image_url = url_for('chat.get_uploaded_image', filename=random_filename)
                 print(f"画像URL: {image_url}")
+                
             except Exception as e:
                 error_msg = f'画像アップロードエラー: {str(e)}'
                 print(f"例外: {error_msg}")
@@ -579,4 +584,11 @@ def simple_test():
     """シンプルなテストページ"""
     # デフォルトチャンネルを取得
     default_channel = get_or_create_default_channel()
-    return render_template('simple_test.html', channel_id=default_channel.id) 
+    return render_template('simple_test.html', channel_id=default_channel.id)
+
+# 画像表示用のエンドポイントを追加
+@bp.route('/uploads/<filename>')
+def get_uploaded_image(filename):
+    """アップロードされた画像を配信"""
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', UPLOAD_FOLDER)
+    return send_from_directory(upload_folder, filename) 
