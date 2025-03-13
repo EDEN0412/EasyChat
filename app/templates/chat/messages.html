@@ -336,12 +336,105 @@
 
 #create-channel-modal .modal-content, #edit-channel-modal .modal-content {
     z-index: 1003 !important; /* モーダル背景よりも上に表示 */
+    background-color: var(--bg-primary);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 90%;
+    margin: 0 auto;
+}
+
+.modal h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--text-color);
+    font-size: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1002;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 20px 0;
+}
+
+.modal.show {
+    display: flex;
 }
 
 .form-group {
     display: flex;
     align-items: center;
     width: 100%;
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    display: block;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: var(--bg-input);
+    color: var(--text-color);
+}
+
+/* モーダル内のフォームグループは縦並びに */
+.modal .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-hover);
 }
 
 .mention-container {
@@ -666,6 +759,7 @@
 .channel-search-input-container {
     display: flex;
     margin-bottom: 15px;
+    align-items: center;
 }
 
 .channel-search-input-container input {
@@ -676,6 +770,21 @@
     font-size: 16px;
     background-color: var(--bg-input);
     color: var(--text-color);
+}
+
+.channel-search-input-container .close {
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 10px;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    margin-right: 10px;
+}
+
+.channel-search-input-container .close:hover {
+    color: #ff3860;
+    transform: scale(1.1);
 }
 
 .channel-search-results {
@@ -934,9 +1043,9 @@
     <div class="channel-search-modal-content">
         <div class="modal-header">
             <h3 class="channel-search-title">チャンネルを検索</h3>
-            <span class="close" onclick="closeChannelSearchModal()">&times;</span>
         </div>
         <div class="channel-search-input-container">
+            <span class="close" onclick="closeChannelSearchModal()">&times;</span>
             <input type="text" id="channel-search-input" placeholder="チャンネル名を入力..." oninput="searchChannels()">
         </div>
         <div class="channel-search-results" id="channel-search-results">
