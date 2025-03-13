@@ -609,6 +609,101 @@
     margin-right: 10px;
     font-size: 16px;
 }
+
+/* チャンネル検索ボタンのスタイル */
+.search-channel-btn {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-right: 5px;
+}
+
+.search-channel-btn:hover {
+    color: #3273dc;
+    background-color: rgba(50, 115, 220, 0.1);
+}
+
+.channels-header-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* チャンネル検索モーダルのスタイル */
+#channel-search-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1002;
+    align-items: center;
+    justify-content: center;
+}
+
+.channel-search-modal-content {
+    background-color: var(--bg-primary);
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.channel-search-title {
+    text-align: center;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.channel-search-input-container {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.channel-search-input-container input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: var(--bg-input);
+    color: var(--text-color);
+}
+
+.channel-search-results {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.channel-search-result-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.channel-search-result-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.channel-search-result-item.active {
+    background-color: rgba(50, 115, 220, 0.1);
+}
+
+.channel-search-no-results {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
 </style>
 
 <div class="chat-layout">
@@ -621,9 +716,14 @@
     <div class="sidebar" id="sidebar">
         <div class="channels-header">
             <h2>チャンネル一覧</h2>
-            <button onclick="showCreateChannelModal()" class="create-channel-btn" title="新規チャンネル作成">
-                <span>+</span>
-            </button>
+            <div class="channels-header-actions">
+                <button onclick="showChannelSearchModal(event)" class="search-channel-btn" title="チャンネルを検索">
+                    <span>🔍</span>
+                </button>
+                <button onclick="showCreateChannelModal()" class="create-channel-btn" title="新規チャンネル作成">
+                    <span>+</span>
+                </button>
+            </div>
         </div>
         <div class="channels-list">
             {% for channel in channels %}
@@ -736,8 +836,8 @@
                 {% if message.user_id == session.get('user_id') %}
                 <div class="message-actions">
                     <button onclick="showEditForm('{{ message.id }}')" class="btn-action" title="編集">✎</button>
-                    <form action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" style="display: inline;">
-                        <button type="button" class="btn-action btn-delete" onclick="submitDeleteForm(event, '{{ message.id }}')" title="削除">✕</button>
+                    <form id="delete-form-{{ message.id }}" action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" style="display: inline;">
+                        <button type="button" class="btn-action btn-delete" onclick="deleteMessage('{{ message.id }}')" title="削除">✕</button>
                     </form>
                 </div>
                 <div class="edit-form" id="edit-form-{{ message.id }}" style="display: none;">
@@ -826,6 +926,22 @@
             </div>
         </div>
         <div id="search-results" class="search-results-container"></div>
+    </div>
+</div>
+
+<!-- チャンネル検索モーダル -->
+<div id="channel-search-modal">
+    <div class="channel-search-modal-content">
+        <div class="modal-header">
+            <h3 class="channel-search-title">チャンネルを検索</h3>
+            <span class="close" onclick="closeChannelSearchModal()">&times;</span>
+        </div>
+        <div class="channel-search-input-container">
+            <input type="text" id="channel-search-input" placeholder="チャンネル名を入力..." oninput="searchChannels()">
+        </div>
+        <div class="channel-search-results" id="channel-search-results">
+            <!-- 検索結果がここに表示されます -->
+        </div>
     </div>
 </div>
 
@@ -1155,8 +1271,8 @@ function createMessageElement(message) {
         html += `
             <div class="message-actions">
                 <button onclick="showEditForm('${message.id}')" class="btn-action" title="編集">✎</button>
-                <form action="/chat/messages/${message.id}/delete" method="POST" style="display: inline;">
-                    <button type="button" class="btn-action btn-delete" onclick="submitDeleteForm(event, '${message.id}')" title="削除">✕</button>
+                <form id="delete-form-${message.id}" action="/chat/messages/${message.id}/delete" method="POST" style="display: inline;">
+                    <button type="button" class="btn-action btn-delete" onclick="deleteMessage('${message.id}')" title="削除">✕</button>
                 </form>
             </div>
             <div class="edit-form" id="edit-form-${message.id}" style="display: none;">
@@ -1450,20 +1566,14 @@ function hideEditChannelModal() {
 }
 
 // メッセージの削除を処理する関数
-function submitDeleteForm(event, messageId) {
-    event.preventDefault();
+function deleteMessage(messageId) {
     if (!confirm('本当に削除しますか？')) {
         return false;
     }
     
-    // フォームを取得
-    const form = event.target.closest('form');
-    const formData = new FormData(form);
-    
-    // フェッチAPIでリクエスト送信
-    fetch(form.action, {
-        method: 'POST',
-        body: formData
+    // APIリクエストを送信
+    fetch(`/chat/messages/${messageId}/delete`, {
+        method: 'POST'
     })
     .then(response => {
         if (response.ok) {
@@ -1477,10 +1587,6 @@ function submitDeleteForm(event, messageId) {
         } else {
             console.error('メッセージ削除エラー:', response.status);
             showFlashMessage('メッセージの削除に失敗しました', 'error');
-            // エラーの詳細をレスポンスから取得
-            return response.text().then(text => {
-                console.error('エラー詳細:', text);
-            });
         }
     })
     .catch(error => {
@@ -1558,6 +1664,7 @@ function closeSearchModal() {
 // モーダル外クリックで閉じる処理を追加
 document.addEventListener('DOMContentLoaded', function() {
     const searchModal = document.getElementById('search-modal');
+    const channelSearchModal = document.getElementById('channel-search-modal');
     
     // モーダル外クリックで閉じる
     searchModal.addEventListener('click', function(event) {
@@ -1565,7 +1672,100 @@ document.addEventListener('DOMContentLoaded', function() {
             closeSearchModal();
         }
     });
+    
+    // チャンネル検索モーダル外クリックで閉じる
+    channelSearchModal.addEventListener('click', function(event) {
+        if (event.target === channelSearchModal) {
+            closeChannelSearchModal();
+        }
+    });
+    
+    // アカウントボタンのクリックイベントを設定
+    const accountButton = document.querySelector('.account-button');
+    if (accountButton) {
+        accountButton.addEventListener('click', function(event) {
+            event.stopPropagation(); // イベント伝播を停止
+            toggleAccountMenu();
+        });
+    }
+    
+    // モバイル用アカウントボタンのクリックイベントを設定
+    const accountButtonMobile = document.querySelector('.account-button-mobile');
+    if (accountButtonMobile) {
+        accountButtonMobile.addEventListener('click', function(event) {
+            event.stopPropagation(); // イベント伝播を停止
+            toggleAccountMenu();
+        });
+    }
+    
+    // モバイル用検索ボタンのクリックイベントを設定
+    const searchButtonMobile = document.querySelector('.search-button-mobile');
+    if (searchButtonMobile) {
+        searchButtonMobile.addEventListener('click', function() {
+            showSearchModal();
+        });
+    }
 });
+
+// チャンネル検索モーダルを表示する関数
+function showChannelSearchModal(event) {
+    document.getElementById('channel-search-modal').style.display = 'flex';
+    document.getElementById('channel-search-input').focus();
+    
+    // 初期表示時に全チャンネルを表示
+    searchChannels();
+    
+    // イベント伝播を防止
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}
+
+// チャンネル検索モーダルを閉じる関数
+function closeChannelSearchModal() {
+    document.getElementById('channel-search-modal').style.display = 'none';
+    document.getElementById('channel-search-results').innerHTML = '';
+    document.getElementById('channel-search-input').value = '';
+}
+
+// チャンネルを検索する関数
+function searchChannels() {
+    const searchInput = document.getElementById('channel-search-input');
+    const searchTerm = searchInput.value.toLowerCase();
+    const resultsContainer = document.getElementById('channel-search-results');
+    
+    // チャンネルデータを作成
+    const channelsData = [
+    {% for channel in channels %}
+        {
+            id: "{{ channel.id }}",
+            name: "{{ channel.name }}",
+            isActive: {{ 'true' if channel.id == current_channel.id else 'false' }}
+        }{{ ',' if not loop.last }}
+    {% endfor %}
+    ];
+    
+    // 検索結果をフィルタリング
+    let filteredChannels = channelsData;
+    if (searchTerm) {
+        filteredChannels = channelsData.filter(channel => 
+            channel.name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // 結果を表示
+    if (filteredChannels.length > 0) {
+        resultsContainer.innerHTML = filteredChannels.map(channel => `
+            <div class="channel-search-result-item ${channel.isActive ? 'active' : ''}" 
+                 onclick="window.location.href='/chat/messages/${channel.id}'">
+                <div class="channel-name"># ${channel.name}</div>
+            </div>
+        `).join('');
+    } else {
+        resultsContainer.innerHTML = '<div class="channel-search-no-results">チャンネルが見つかりませんでした</div>';
+    }
+}
 
 // 検索を実行する関数
 function searchMessages() {
@@ -1626,49 +1826,11 @@ function searchMessages() {
 // Enterキーで検索を実行
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-input');
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            searchMessages();
-        }
-    });
-});
-
-// モバイル用の検索ボタンとアカウントボタンの機能を追加
-document.addEventListener('DOMContentLoaded', function() {
-    // モバイル用検索ボタン
-    const searchButtonMobile = document.querySelector('.search-button-mobile');
-    if (searchButtonMobile) {
-        searchButtonMobile.addEventListener('click', function() {
-            document.getElementById('search-modal').style.display = 'flex';
-        });
-    }
-    
-    // モバイル用アカウントボタン
-    const accountButtonMobile = document.querySelector('.account-button-mobile');
-    if (accountButtonMobile) {
-        accountButtonMobile.addEventListener('click', function(event) {
-            event.stopPropagation(); // イベント伝播を停止
-            console.log("モバイルアカウントボタンがクリックされました");
-            toggleAccountMenu();
-        });
-    }
-    
-    // PCアカウントボタン
-    const accountButton = document.querySelector('.account-button');
-    if (accountButton) {
-        accountButton.addEventListener('click', function(event) {
-            event.stopPropagation(); // イベント伝播を停止
-            console.log("PCアカウントボタンがクリックされました");
-            toggleAccountMenu();
-        });
-    }
-    
-    // モバイル用メニュートグル
-    const menuToggleMobile = document.querySelector('.menu-toggle-mobile');
-    if (menuToggleMobile) {
-        menuToggleMobile.addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('show');
-            document.querySelector('.overlay').classList.toggle('show');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchMessages();
+            }
         });
     }
 });
