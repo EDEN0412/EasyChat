@@ -251,6 +251,18 @@
     .messages-area {
         padding-bottom: 70px; /* 入力フォームの高さ分余白を追加 */
         margin-bottom: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* iOSでのスムーズスクロール */
+        height: calc(100vh - 60px); /* ヘッダーの高さを引いた高さ */
+        padding-top: 10px;
+    }
+    
+    /* チャットコンテナの調整 */
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
     }
 }
 
@@ -561,7 +573,12 @@ messageForm.addEventListener('submit', function(e) {
         if (data.data) {
             const messageElement = createMessageElement(data.data);
             messagesArea.appendChild(messageElement);
-            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            // スクロール処理を改善
+            setTimeout(() => {
+                scrollToBottom();
+                console.log('メッセージ送信後にスクロール実行');
+            }, 100);
         }
     })
     .catch(error => {
@@ -608,7 +625,10 @@ socket.on('new_message', function(message) {
         messagesArea.appendChild(messageElement);
         
         // 最下部にスクロール
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+        setTimeout(() => {
+            scrollToBottom();
+            console.log('新規メッセージ受信時にスクロール実行');
+        }, 100);
         
         // 自分宛てのメンションがあれば通知効果を適用
         const username = '{{ session.get("username") }}';
@@ -717,7 +737,15 @@ function hideEditForm(messageId) {
 
 // 最下部までスクロール
 function scrollToBottom() {
+    console.log('スクロール実行: 現在の高さ=', messagesArea.scrollHeight);
     messagesArea.scrollTop = messagesArea.scrollHeight;
+    
+    // モバイル表示の場合、追加の処理
+    if (window.innerWidth <= 767) {
+        // スクロール位置を確実に最下部に設定
+        window.scrollTo(0, document.body.scrollHeight);
+        console.log('モバイル用追加スクロール実行');
+    }
 }
 
 // 新規メッセージ要素の作成
@@ -905,7 +933,10 @@ document.addEventListener('DOMContentLoaded', function() {
     updateThemeIcon();
     
     // ページ読み込み時に最下部にスクロール
-    scrollToBottom();
+    setTimeout(() => {
+        scrollToBottom();
+        console.log('ページ読み込み時にスクロール実行');
+    }, 100);
 
     // 削除ボタンのイベント伝播を防止
     const deleteButtons = document.querySelectorAll('.btn-delete-channel');
@@ -915,6 +946,21 @@ document.addEventListener('DOMContentLoaded', function() {
             event.stopPropagation();
         });
     });
+    
+    // モバイル表示時の調整
+    if (window.innerWidth <= 767) {
+        // 入力フォームの高さを取得
+        const messageForm = document.querySelector('.message-form');
+        if (messageForm) {
+            const formHeight = messageForm.offsetHeight;
+            // メッセージエリアの下部余白を調整
+            const messagesArea = document.getElementById('messages-area');
+            if (messagesArea) {
+                messagesArea.style.paddingBottom = (formHeight + 20) + 'px';
+                console.log('モバイル表示の余白調整:', formHeight + 20, 'px');
+            }
+        }
+    }
 });
 
 // フラッシュメッセージを表示する関数
