@@ -198,6 +198,43 @@
 /* モバイル用チャンネルヘッダー */
 .channel-header {
     display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    height: 50px;
+}
+
+.channel-header h2 {
+    margin: 0;
+    font-size: 18px;
+    text-align: center;
+    flex: 1;
+}
+
+.channel-header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.search-button-mobile, .account-button-mobile {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 18px;
+    padding: 5px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.menu-toggle-mobile {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 18px;
+    padding: 5px;
+    cursor: pointer;
 }
 
 /* ハンバーガーメニューボタン - デフォルトでは非表示 */
@@ -209,7 +246,7 @@
     .channel-header {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
         padding: 0 15px;
     }
     
@@ -217,10 +254,16 @@
         margin: 0;
         font-size: 18px;
         text-align: center;
+        flex: 1;
     }
     
     /* ハンバーガーメニューボタンを表示 */
-    .menu-toggle {
+    .menu-toggle, .menu-toggle-mobile {
+        display: flex;
+    }
+    
+    /* 検索ボタンとアカウントボタンを表示 */
+    .search-button-mobile, .account-button-mobile {
         display: flex;
     }
     
@@ -263,6 +306,26 @@
         flex-direction: column;
         height: 100vh;
         overflow: hidden;
+    }
+    
+    /* モバイル表示時にサイドバーのアカウントボタンと検索ボタンを非表示 */
+    .sidebar .account-button,
+    .sidebar .search-button,
+    .account-menu-container .account-button,
+    .search-button-container {
+        display: none;
+    }
+    
+    /* モバイル用アカウントメニューの位置調整 */
+    .account-menu {
+        position: fixed;
+        top: 50px;
+        right: 0;
+        width: 200px;
+        z-index: 1002;
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 }
 
@@ -491,6 +554,61 @@
     background-color: var(--bg-hover);
     color: #ff3860;
 }
+
+.account-menu {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    z-index: 1000;
+    display: none;
+}
+
+.account-menu-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.account-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.account-menu-items {
+    padding: 10px 0;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    cursor: pointer;
+    color: var(--text-color);
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.menu-item-logout {
+    border-top: 1px solid var(--border-color);
+    margin-top: 5px;
+    padding-top: 10px;
+}
+
+.theme-icon, .logout-icon {
+    margin-right: 10px;
+    font-size: 16px;
+}
 </style>
 
 <div class="chat-layout">
@@ -529,11 +647,20 @@
     <div class="chat-container">
         <!-- モバイル用チャンネルヘッダー -->
         <div class="channel-header">
+            <button class="menu-toggle-mobile" id="menuToggleMobile">☰</button>
             <h2># {{ current_channel.name }}</h2>
+            <div class="channel-header-actions">
+                <button class="search-button-mobile" title="メッセージを検索">
+                    <span class="search-icon">🔍</span>
+                </button>
+                <button class="account-button-mobile" title="アカウント設定">
+                    <span class="account-icon">👤</span>
+                </button>
+            </div>
         </div>
         
         <div class="account-menu-container">
-            <button class="account-button" onclick="toggleAccountMenu()" title="アカウント設定">
+            <button class="account-button" title="アカウント設定">
                 <span class="account-icon">👤</span>
             </button>
             <div class="account-menu" id="account-menu">
@@ -541,7 +668,7 @@
                     <span class="account-name">{{ session.get('username') }}</span>
                 </div>
                 <div class="account-menu-items">
-                    <button class="menu-item" onclick="toggleTheme()">
+                    <button class="menu-item" id="toggle-theme-button">
                         <span class="theme-icon">🌙</span>
                         <span class="menu-text">ダーク/ライトモード</span>
                     </button>
@@ -986,7 +1113,8 @@ function createMessageElement(message) {
     let html = `
         <div class="message-header">
             <span class="username">${message.username || ''}</span>
-            <span class="timestamp">${message.created_at || ''}
+            <span class="timestamp">
+                ${message.created_at || ''}
                 ${message.is_edited ? '<span class="edited-mark">（編集済み）</span>' : ''}
             </span>
         </div>
@@ -1117,16 +1245,29 @@ function hideMentionSuggestions() {
 // アカウントメニューの表示/非表示を切り替え
 function toggleAccountMenu() {
     const menu = document.getElementById('account-menu');
-    menu.classList.toggle('show');
+    console.log("アカウントメニュー切替: 現在の表示状態=", menu.style.display);
+    
+    // 明示的に表示/非表示を設定
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'block';
+    }
+    
+    console.log("アカウントメニュー切替後: 表示状態=", menu.style.display);
 }
 
 // メニュー外クリックで閉じる
 document.addEventListener('click', function(event) {
     const menu = document.getElementById('account-menu');
     const accountButton = document.querySelector('.account-button');
+    const accountButtonMobile = document.querySelector('.account-button-mobile');
     
-    if (!menu.contains(event.target) && !accountButton.contains(event.target)) {
-        menu.classList.remove('show');
+    if (menu.style.display === 'block' && 
+        !menu.contains(event.target) && 
+        !accountButton.contains(event.target) && 
+        (!accountButtonMobile || !accountButtonMobile.contains(event.target))) {
+        menu.style.display = 'none';
     }
 });
 
@@ -1158,6 +1299,14 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottom();
         console.log('ページ読み込み時にスクロール実行');
     }, 100);
+
+    // テーマ切り替えボタン
+    const themeButton = document.getElementById('toggle-theme-button');
+    if (themeButton) {
+        themeButton.addEventListener('click', function() {
+            toggleTheme();
+        });
+    }
 
     // 削除ボタンのイベント伝播を防止
     const deleteButtons = document.querySelectorAll('.btn-delete-channel');
@@ -1482,6 +1631,46 @@ document.addEventListener('DOMContentLoaded', function() {
             searchMessages();
         }
     });
+});
+
+// モバイル用の検索ボタンとアカウントボタンの機能を追加
+document.addEventListener('DOMContentLoaded', function() {
+    // モバイル用検索ボタン
+    const searchButtonMobile = document.querySelector('.search-button-mobile');
+    if (searchButtonMobile) {
+        searchButtonMobile.addEventListener('click', function() {
+            document.getElementById('search-modal').style.display = 'flex';
+        });
+    }
+    
+    // モバイル用アカウントボタン
+    const accountButtonMobile = document.querySelector('.account-button-mobile');
+    if (accountButtonMobile) {
+        accountButtonMobile.addEventListener('click', function(event) {
+            event.stopPropagation(); // イベント伝播を停止
+            console.log("モバイルアカウントボタンがクリックされました");
+            toggleAccountMenu();
+        });
+    }
+    
+    // PCアカウントボタン
+    const accountButton = document.querySelector('.account-button');
+    if (accountButton) {
+        accountButton.addEventListener('click', function(event) {
+            event.stopPropagation(); // イベント伝播を停止
+            console.log("PCアカウントボタンがクリックされました");
+            toggleAccountMenu();
+        });
+    }
+    
+    // モバイル用メニュートグル
+    const menuToggleMobile = document.querySelector('.menu-toggle-mobile');
+    if (menuToggleMobile) {
+        menuToggleMobile.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            document.querySelector('.overlay').classList.toggle('show');
+        });
+    }
 });
 </script>
 {% endblock %}
