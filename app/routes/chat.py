@@ -589,6 +589,41 @@ def simple_test():
 # 画像表示用のエンドポイントを追加
 @bp.route('/uploads/<filename>')
 def get_uploaded_image(filename):
-    """アップロードされた画像を配信"""
-    upload_folder = current_app.config.get('UPLOAD_FOLDER', UPLOAD_FOLDER)
-    return send_from_directory(upload_folder, filename) 
+    """アップロードされた画像を提供する"""
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+
+@bp.route('/search')
+@login_required
+def search_messages():
+    """メッセージを検索する"""
+    keyword = request.args.get('keyword', '')
+    channel_id = request.args.get('channel_id')
+    
+    if not keyword or not channel_id:
+        return jsonify({'messages': []})
+    
+    # キーワードを含むメッセージを検索
+    messages = Message.query.filter(
+        Message.channel_id == channel_id,
+        Message.content.ilike(f'%{keyword}%')
+    ).order_by(Message.created_at.desc()).all()
+    
+    # 検索結果をフォーマット
+    result = []
+    for message in messages:
+        # メッセージの作成日時をJSTに変換
+        created_at_jst = message.created_at.replace(tzinfo=UTC).astimezone(JST)
+        timestamp = created_at_jst.strftime('%Y年%m月%d日 %H:%M')
+        
+        # メンションを処理したコンテンツを取得
+        content = format_mentions(message.content)
+        
+        result.append({
+            'id': message.id,
+            'username': message.author.username,
+            'content': content,
+            'timestamp': timestamp,
+            'is_edited': message.is_edited
+        })
+    
+    return jsonify({'messages': result}) 

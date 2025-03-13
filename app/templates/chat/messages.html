@@ -294,6 +294,121 @@
     display: flex;
     align-items: center;
 }
+
+/* 検索ボタンのスタイル */
+.search-button-container {
+    position: fixed;
+    top: 80px; /* アカウントボタンの下に配置 */
+    right: 20px;
+    z-index: 100;
+}
+
+.search-button {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.search-button:hover {
+    background-color: var(--bg-hover);
+    transform: scale(1.05);
+}
+
+.search-icon {
+    font-size: 20px;
+}
+
+/* 検索モーダルのスタイル */
+.search-modal-content {
+    max-width: 600px;
+    width: 90%;
+}
+
+.search-input-container {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.search-input-container input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px 0 0 4px;
+    font-size: 16px;
+}
+
+.search-button-modal {
+    padding: 10px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.search-results-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+}
+
+.search-result-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.search-result-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.search-result-username {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.search-result-timestamp {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.search-result-content {
+    word-break: break-word;
+}
+
+.no-results, .searching-indicator, .error-message {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ハイライト効果 */
+.highlight-message {
+    animation: highlightAnimation 2s ease;
+}
+
+@keyframes highlightAnimation {
+    0% { background-color: rgba(255, 255, 0, 0.2); }
+    100% { background-color: transparent; }
+}
 </style>
 
 <div class="chat-layout">
@@ -354,6 +469,13 @@
                     </a>
                 </div>
             </div>
+        </div>
+        
+        <!-- 検索ボタン -->
+        <div class="search-button-container">
+            <button class="search-button" onclick="showSearchModal()" title="メッセージを検索">
+                <span class="search-icon">🔍</span>
+            </button>
         </div>
         
         <!-- フラッシュメッセージ表示領域 -->
@@ -478,6 +600,25 @@
                 <button type="submit" class="btn-primary">更新</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- 検索モーダル -->
+<div id="search-modal" class="modal">
+    <div class="modal-content search-modal-content">
+        <div class="modal-header">
+            <h3>メッセージを検索</h3>
+            <span class="close" onclick="closeSearchModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="search-form">
+                <div class="search-input-container">
+                    <input type="text" id="search-input" placeholder="キーワードを入力..." class="form-control">
+                    <button onclick="searchMessages()" class="search-button-modal">検索</button>
+                </div>
+            </div>
+            <div id="search-results" class="search-results-container"></div>
+        </div>
     </div>
 </div>
 
@@ -1171,5 +1312,84 @@ function playNotificationSound() {
         console.log('通知音機能エラー:', e);
     }
 }
+
+// 検索モーダルを表示する関数
+function showSearchModal() {
+    document.getElementById('search-modal').style.display = 'block';
+    document.getElementById('search-input').focus();
+}
+
+// 検索モーダルを閉じる関数
+function closeSearchModal() {
+    document.getElementById('search-modal').style.display = 'none';
+    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('search-input').value = '';
+}
+
+// 検索を実行する関数
+function searchMessages() {
+    const keyword = document.getElementById('search-input').value.trim();
+    if (keyword === '') {
+        return;
+    }
+    
+    const channelId = '{{ current_channel.id }}';
+    
+    // 検索中の表示
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = '<div class="searching-indicator">検索中...</div>';
+    
+    // APIリクエストを送信
+    fetch(`/chat/search?keyword=${encodeURIComponent(keyword)}&channel_id=${channelId}`)
+        .then(response => response.json())
+        .then(data => {
+            resultsContainer.innerHTML = '';
+            
+            if (data.messages.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">検索結果がありません</div>';
+                return;
+            }
+            
+            // 検索結果を表示
+            data.messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'search-result-item';
+                messageElement.innerHTML = `
+                    <div class="search-result-header">
+                        <span class="search-result-username">${message.username}</span>
+                        <span class="search-result-timestamp">${message.timestamp}</span>
+                    </div>
+                    <div class="search-result-content">${message.content}</div>
+                `;
+                messageElement.addEventListener('click', () => {
+                    // メッセージをクリックしたときの処理
+                    closeSearchModal();
+                    const targetMessage = document.getElementById(`message-${message.id}`);
+                    if (targetMessage) {
+                        targetMessage.scrollIntoView({ behavior: 'smooth' });
+                        targetMessage.classList.add('highlight-message');
+                        setTimeout(() => {
+                            targetMessage.classList.remove('highlight-message');
+                        }, 2000);
+                    }
+                });
+                resultsContainer.appendChild(messageElement);
+            });
+        })
+        .catch(error => {
+            console.error('検索エラー:', error);
+            resultsContainer.innerHTML = '<div class="error-message">検索中にエラーが発生しました</div>';
+        });
+}
+
+// Enterキーで検索を実行
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchMessages();
+        }
+    });
+});
 </script>
 {% endblock %}
