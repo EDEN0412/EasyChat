@@ -328,14 +328,35 @@
 }
 
 /* 検索モーダルのスタイル */
+#search-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1002;
+    align-items: center;
+    justify-content: center;
+}
+
 .search-modal-content {
     max-width: 600px;
     width: 90%;
 }
 
+.search-title {
+    text-align: center;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    font-size: 20px;
+    font-weight: bold;
+}
+
 .search-input-container {
     display: flex;
-    margin-bottom: 15px;
+    margin-bottom: 0;
 }
 
 .search-input-container input {
@@ -353,19 +374,63 @@
     border: none;
     border-radius: 0 4px 4px 0;
     cursor: pointer;
+    min-width: 70px;
+}
+
+/* 検索フォームコンテナ（横並び用） */
+.search-form-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 15px 0 15px;
+}
+
+/* 検索フォームコンテナ（中央配置） */
+.search-form-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 15px 0 15px;
+    gap: 15px; /* 要素間の間隔 */
+}
+
+.search-form {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.search-form {
+    width: 80%;
+    max-width: 400px;
+    margin: 0;
+}
+
+.close-button {
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 10px;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    color: #ff3860;
+    transform: scale(1.1);
 }
 
 .search-results-container {
     max-height: 400px;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: 4px;
     background-color: var(--bg-primary);
+    margin: 0 15px 15px 15px;
 }
 
 .search-result-item {
     padding: 10px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: none;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
@@ -408,6 +473,23 @@
 @keyframes highlightAnimation {
     0% { background-color: rgba(255, 255, 0, 0.2); }
     100% { background-color: transparent; }
+}
+
+/* 閉じるボタンを大きくする */
+.modal-header .close {
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 8px 15px;
+    margin: -8px;
+    border-radius: 4px;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+
+.modal-header .close:hover {
+    background-color: var(--bg-hover);
+    color: #ff3860;
 }
 </style>
 
@@ -606,19 +688,17 @@
 <!-- 検索モーダル -->
 <div id="search-modal" class="modal">
     <div class="modal-content search-modal-content">
-        <div class="modal-header">
-            <h3>メッセージを検索</h3>
-            <span class="close" onclick="closeSearchModal()">&times;</span>
-        </div>
-        <div class="modal-body">
+        <h3 class="search-title">メッセージを検索</h3>
+        <div class="search-form-container">
+            <span class="close-button" onclick="closeSearchModal()">&times;</span>
             <div class="search-form">
                 <div class="search-input-container">
                     <input type="text" id="search-input" placeholder="キーワードを入力..." class="form-control">
                     <button onclick="searchMessages()" class="search-button-modal">検索</button>
                 </div>
             </div>
-            <div id="search-results" class="search-results-container"></div>
         </div>
+        <div id="search-results" class="search-results-container"></div>
     </div>
 </div>
 
@@ -1315,7 +1395,7 @@ function playNotificationSound() {
 
 // 検索モーダルを表示する関数
 function showSearchModal() {
-    document.getElementById('search-modal').style.display = 'block';
+    document.getElementById('search-modal').style.display = 'flex';
     document.getElementById('search-input').focus();
 }
 
@@ -1325,6 +1405,18 @@ function closeSearchModal() {
     document.getElementById('search-results').innerHTML = '';
     document.getElementById('search-input').value = '';
 }
+
+// モーダル外クリックで閉じる処理を追加
+document.addEventListener('DOMContentLoaded', function() {
+    const searchModal = document.getElementById('search-modal');
+    
+    // モーダル外クリックで閉じる
+    searchModal.addEventListener('click', function(event) {
+        if (event.target === searchModal) {
+            closeSearchModal();
+        }
+    });
+});
 
 // 検索を実行する関数
 function searchMessages() {
