@@ -6,9 +6,9 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h2 class="h4 text-center mb-0">{{ user.username }}のプロフィール</h2>
+            <div class="card shadow-sm" style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+                <div class="card-header" style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+                    <h2 class="h4 text-center mb-0" style="color: var(--text-primary);">{{ user.username }}のプロフィール</h2>
                 </div>
                 <div class="card-body">
                     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -28,13 +28,13 @@
                                 {% if current_user.avatar_url %}
                                     <img src="{{ current_user.avatar_url }}" alt="現在のアバター" class="rounded-circle mb-3" width="120" height="120" style="object-fit: cover;">
                                 {% else %}
-                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; border: 1px solid #dee2e6;">
-                                        <span class="text-secondary" style="font-size: 2.5rem;">{{ current_user.username[0] | upper }}</span>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; border: 1px solid var(--border-color); background-color: var(--bg-message);">
+                                        <span style="font-size: 2.5rem; color: var(--text-primary);">{{ current_user.username[0] | upper }}</span>
                                     </div>
                                 {% endif %}
                                 
                                 <div class="mb-3">
-                                    {{ form.avatar.label(class="form-label") }}
+                                    <label for="{{ form.avatar.id }}" class="form-label" style="color: var(--text-primary);">{{ form.avatar.label.text }}</label>
                                     {{ form.avatar(class="form-control form-control-sm") }}
                                     {% if form.avatar.errors %}
                                         {% for error in form.avatar.errors %}
@@ -45,11 +45,11 @@
                             </div>
                             
                             <div class="mb-4">
-                                {{ form.status_message.label(class="form-label") }}
+                                <label for="{{ form.status_message.id }}" class="form-label" style="color: var(--text-primary);">{{ form.status_message.label.text }}</label>
                                 {{ form.status_message(class="form-control", placeholder="ステータスメッセージを入力してください") }}
                                 {% if form.status_message.errors %}
                                     {% for error in form.status_message.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
+                                            <div class="text-danger small">{{ error }}</div>
                                     {% endfor %}
                                 {% endif %}
                             </div>
@@ -64,26 +64,26 @@
                             {% if user.avatar_url %}
                                 <img src="{{ user.avatar_url }}" alt="{{ user.username }}のアバター" class="rounded-circle mb-3" width="120" height="120" style="object-fit: cover;">
                             {% else %}
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; border: 1px solid #dee2e6;">
-                                    <span class="text-secondary" style="font-size: 2.5rem;">{{ user.username[0] | upper }}</span>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; border: 1px solid var(--border-color); background-color: var(--bg-message);">
+                                    <span style="font-size: 2.5rem; color: var(--text-primary);">{{ user.username[0] | upper }}</span>
                                 </div>
                             {% endif %}
                             
-                            <h3 class="h5 mb-2">{{ user.username }}</h3>
+                            <h3 class="h5 mb-2" style="color: var(--text-primary);">{{ user.username }}</h3>
                             
                             {% if user.status_message %}
-                                <p class="text-muted small">{{ user.status_message }}</p>
+                                <p style="color: var(--text-secondary);" class="small">{{ user.status_message }}</p>
                             {% endif %}
                         </div>
                         
                         <div class="row">
                             <div class="col-6 text-center">
-                                <p class="small text-muted mb-1">登録日</p>
-                                <p class="mb-0">{{ user.created_at.strftime('%Y年%m月%d日') }}</p>
+                                <p class="small mb-1" style="color: var(--text-secondary);">登録日</p>
+                                <p class="mb-0" style="color: var(--text-primary);">{{ user.created_at.strftime('%Y年%m月%d日') }}</p>
                             </div>
                             <div class="col-6 text-center">
-                                <p class="small text-muted mb-1">メッセージ数</p>
-                                <p class="mb-0">{{ user.messages.count() }}</p>
+                                <p class="small mb-1" style="color: var(--text-secondary);">メッセージ数</p>
+                                <p class="mb-0" style="color: var(--text-primary);">{{ user.messages.count() }}</p>
                             </div>
                         </div>
                     {% endif %}
@@ -91,7 +91,7 @@
             </div>
             
             <div class="text-center mt-3">
-                <a href="{{ url_for('chat.messages') }}" class="btn btn-outline-secondary btn-sm">チャットに戻る</a>
+                <a href="{{ url_for('chat.messages') }}" class="btn btn-outline-secondary btn-sm" style="border-color: var(--border-color); color: var(--text-primary);">チャットに戻る</a>
             </div>
         </div>
     </div>

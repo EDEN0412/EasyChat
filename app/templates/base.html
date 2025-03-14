@@ -19,6 +19,11 @@
             --border-color: #e0e0e0;
             --accent-color: #007bff;
             --hover-color: #0056b3;
+            --input-bg: #ffffff;
+            --input-text: #333333;
+            --input-border: #ced4da;
+            --input-focus-border: #80bdff;
+            --input-focus-shadow: rgba(0, 123, 255, 0.25);
         }
 
         [data-theme="dark"] {
@@ -31,6 +36,11 @@
             --border-color: #202225;
             --accent-color: #7289da;
             --hover-color: #677bc4;
+            --input-bg: #40444b;
+            --input-text: #dcddde;
+            --input-border: #4f545c;
+            --input-focus-border: #7289da;
+            --input-focus-shadow: rgba(114, 137, 218, 0.25);
         }
 
         * {
@@ -1264,6 +1274,25 @@
         /* ハンバーガーメニューボタン */
         .menu-toggle {
             display: none; /* デフォルトでは非表示 */
+        }
+
+        /* フォーム要素のスタイル */
+        .form-control {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border-color: var(--input-border);
+        }
+
+        .form-control:focus {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 0.25rem var(--input-focus-shadow);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
         }
     </style>
 </head>
