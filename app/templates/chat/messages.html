@@ -928,6 +928,7 @@
 .message-avatar {
     margin-right: 10px;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
 .message-avatar .avatar-icon {
@@ -1015,9 +1016,9 @@
                     <span class="account-name">{{ session.get('username') }}</span>
                 </div>
                 <div class="account-menu-items">
-                    <a href="{{ url_for('profile.view', username=session.get('username')) }}" class="menu-item menu-item-divider">
+                    <a href="{{ url_for('profile.edit') }}" class="menu-item menu-item-divider">
                         <span class="profile-icon">👤</span>
-                        <span class="menu-text">プロフィール</span>
+                        <span class="menu-text">プロフィール編集</span>
                     </a>
                     <button class="menu-item" id="toggle-theme-button">
                         <span class="theme-icon">🌙</span>
@@ -1044,7 +1045,7 @@
         <div class="messages-area" id="messages-area">
             {% for message in messages %}
             <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
-                <div class="message-avatar">
+                <div class="message-avatar" onclick="window.location.href='{{ url_for('profile.view', username=message.author.username) }}'">
                     {% if message.author.avatar_url %}
                         <img src="{{ message.author.avatar_url }}" alt="{{ message.author.username }}" class="avatar-icon" width="35" height="35">
                     {% else %}
@@ -1487,7 +1488,7 @@ function createMessageElement(message) {
     
     // メッセージHTML生成
     let html = `
-        <div class="message-avatar">
+        <div class="message-avatar" onclick="window.location.href='/profile/view/${encodeURIComponent(message.username)}'">
     `;
     
     // アバター表示（アバターURLがあれば画像、なければユーザー名の頭文字）

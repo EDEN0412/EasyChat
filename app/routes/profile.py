@@ -35,11 +35,17 @@ def save_avatar(form_avatar):
     
     return f'/profile/uploads/{avatar_fn}'
 
-@profile.route('/profile/edit', methods=['POST'])
+@profile.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit():
     form = ProfileForm()
     
+    # GETリクエストの場合はフォームに現在の値をセット
+    if request.method == 'GET':
+        form.status_message.data = current_user.status_message
+        return render_template('profile/edit.html', form=form)
+    
+    # POSTリクエストの場合は処理を実行
     if form.validate_on_submit():
         # 変更があったかどうかを追跡するフラグ
         changes_made = False
@@ -60,12 +66,15 @@ def edit():
         if changes_made:
             db.session.commit()
             flash('プロフィールが更新されました', 'success')
+            return redirect(url_for('profile.view', username=current_user.username))
+        else:
+            # 変更がない場合は編集ページに留まる（通知なし）
+            return render_template('profile/edit.html', form=form)
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f'{getattr(form, field).label.text}: {error}', 'error')
-    
-    return redirect(url_for('profile.view', username=current_user.username))
+        return render_template('profile/edit.html', form=form)
 
 @profile.route('/profile/<username>', methods=['GET'])
 def view(username):

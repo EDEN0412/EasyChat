@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}プロフィール編集{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm" style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+                <div class="card-header" style="background-color: var(--bg-secondary); border-color: var(--border-color);">
+                    <h2 class="h4 text-center mb-0" style="color: var(--text-primary);">プロフィール編集</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('profile.edit') }}" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4 text-center">
+                            {% if current_user.avatar_url %}
+                                <img src="{{ current_user.avatar_url }}" alt="現在のアバター" class="rounded-circle mb-3" width="120" height="120" style="object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; border: 1px solid var(--border-color); background-color: var(--bg-message);">
+                                    <span style="font-size: 2.5rem; color: var(--text-primary);">{{ current_user.username[0] | upper }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label for="avatar" class="form-label" style="color: var(--text-primary);">{{ form.avatar.label.text }}</label>
+                                {{ form.avatar(class="form-control form-control-sm", id="avatar") }}
+                                {% if form.avatar.errors %}
+                                    {% for error in form.avatar.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="status_message" class="form-label" style="color: var(--text-primary);">{{ form.status_message.label.text }}</label>
+                            {{ form.status_message(class="form-control", placeholder="ステータスメッセージを入力してください", id="status_message") }}
+                            {% if form.status_message.errors %}
+                                {% for error in form.status_message.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('chat.messages') }}" class="btn btn-outline-secondary btn-sm" style="border-color: var(--border-color); color: var(--text-primary);">チャットに戻る</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
