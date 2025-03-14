@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, join_room, leave_room
+from flask_login import LoginManager
 from config import Config
 import traceback
 import sqlalchemy as sa
@@ -14,6 +15,10 @@ from functools import wraps
 db = SQLAlchemy(engine_options={'poolclass': NullPool})  # プーリングを無効化
 migrate = Migrate()
 socketio = SocketIO()
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'この機能を使用するにはログインが必要です。'
+login_manager.login_message_category = 'info'
 
 # WebSocketイベントハンドラ
 @socketio.on('join')
@@ -82,10 +87,17 @@ def create_app(config_class=Config):
     # 拡張機能の初期化
     db.init_app(app)
     migrate.init_app(app, db)
+    login_manager.init_app(app)
     if not app.config.get('SOCKETIO_ENABLED', True):
         app.wsgi_app = app.wsgi_app
     else:
         socketio.init_app(app, cors_allowed_origins="*")
+
+    # ユーザーローダーの設定
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models.user import User
+        return User.query.get(user_id)
 
     # データベース接続テスト
     try:
@@ -107,10 +119,11 @@ def create_app(config_class=Config):
         print(traceback.format_exc())
 
     # ルートの登録
-    from app.routes import main, auth, chat
+    from app.routes import main, auth, chat, profile
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(chat.bp, url_prefix='/chat')
+    app.register_blueprint(profile.profile)
 
     # モデルの登録
     from app.models import User, Channel, Message, Reaction

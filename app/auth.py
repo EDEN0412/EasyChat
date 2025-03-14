@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 import bcrypt
 from flask import session
+from flask_login import login_user as flask_login_user, logout_user as flask_logout_user, current_user
 from app.models import User
 from app import db
 import traceback
@@ -124,14 +125,18 @@ def authenticate_user(username, password):
     return None
 
 def login_user(user):
-    """ユーザーをログインさせる"""
+    """ユーザーをログイン状態にする"""
     session['user_id'] = user.id
     session['username'] = user.username
+    # Flask-Loginのログイン処理も実行
+    flask_login_user(user)
 
 def logout_user():
-    """ユーザーをログアウトさせる"""
+    """ユーザーをログアウト状態にする"""
     session.pop('user_id', None)
     session.pop('username', None)
+    # Flask-Loginのログアウト処理も実行
+    flask_logout_user()
 
 def get_current_user():
     """現在のログインユーザーを取得する"""

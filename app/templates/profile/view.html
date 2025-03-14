@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }}のプロフィール{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h3 text-center">{{ user.username }}のプロフィール</h2>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {% if current_user.id == user.id %}
+                        <!-- 自分のプロフィールの場合は編集フォームを表示 -->
+                        <form method="POST" action="{{ url_for('profile.edit') }}" enctype="multipart/form-data">
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="mb-4 text-center">
+                                {% if current_user.avatar_url %}
+                                    <img src="{{ current_user.avatar_url }}" alt="現在のアバター" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 150px; height: 150px;">
+                                        <span class="text-white" style="font-size: 3rem;">{{ current_user.username[0] | upper }}</span>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    {{ form.avatar.label(class="form-label") }}
+                                    {{ form.avatar(class="form-control") }}
+                                    {% if form.avatar.errors %}
+                                        {% for error in form.avatar.errors %}
+                                            <div class="text-danger">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.status_message.label(class="form-label") }}
+                                {{ form.status_message(class="form-control", placeholder="ステータスメッセージを入力してください") }}
+                                {% if form.status_message.errors %}
+                                    {% for error in form.status_message.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.theme_preference.label(class="form-label") }}
+                                {{ form.theme_preference(class="form-select") }}
+                                {% if form.theme_preference.errors %}
+                                    {% for error in form.theme_preference.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    {% else %}
+                        <!-- 他のユーザーのプロフィールの場合は表示のみ -->
+                        <div class="text-center mb-4">
+                            {% if user.avatar_url %}
+                                <img src="{{ user.avatar_url }}" alt="{{ user.username }}のアバター" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 150px; height: 150px;">
+                                    <span class="text-white" style="font-size: 3rem;">{{ user.username[0] | upper }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            <h3 class="h4">{{ user.username }}</h3>
+                            
+                            {% if user.status_message %}
+                                <p class="text-muted">{{ user.status_message }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>登録日:</strong> {{ user.created_at.strftime('%Y年%m月%d日') }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>メッセージ数:</strong> {{ user.messages.count() }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
