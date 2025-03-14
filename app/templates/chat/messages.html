@@ -898,6 +898,51 @@
     transform: scale(1.05);
     background-color: var(--bg-hover);
 }
+
+/* アバターアイコンのスタイル */
+.avatar-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--accent-color);
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* メッセージのスタイル調整 */
+.message {
+    display: flex;
+    margin-bottom: 15px;
+    padding: 5px 10px;
+    position: relative;
+}
+
+.message-avatar {
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.message-avatar .avatar-icon {
+    width: 35px;
+    height: 35px;
+}
+
+.message-avatar .avatar-text {
+    font-size: 16px;
+}
+
+.message-content-wrapper {
+    flex-grow: 1;
+    overflow: hidden;
+}
 </style>
 
 <div class="chat-layout">
@@ -999,61 +1044,70 @@
         <div class="messages-area" id="messages-area">
             {% for message in messages %}
             <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
-                <div class="message-header">
-                    <span class="username">{{ message.author.username }}</span>
-                    <span class="timestamp">
-                        {% set created_at_jst = message.created_at.replace(tzinfo=utc).astimezone(jst) %}
-                        {{ created_at_jst.strftime('%Y年%m月%d日 %H:%M') }}
-                        {% if message.is_edited %}
-                        <span class="edited-mark">（編集済み）</span>
-                        {% endif %}
-                    </span>
+                <div class="message-avatar">
+                    {% if message.author.avatar_url %}
+                        <img src="{{ message.author.avatar_url }}" alt="{{ message.author.username }}" class="avatar-icon" width="35" height="35">
+                    {% else %}
+                        <span class="avatar-icon avatar-text">{{ message.author.username[0] | upper }}</span>
+                    {% endif %}
                 </div>
-                <div class="message-content" id="message-content-{{ message.id }}">
-                    {{ message.display_content|safe }}
-                    {% if message.image_url %}
-                    <div class="message-image">
-                        <a href="{{ message.image_url }}" target="_blank">
-                            <img src="{{ message.image_url }}" alt="添付画像" style="max-width: 300px; max-height: 300px; margin-top: 10px; border-radius: 5px;">
-                        </a>
+                <div class="message-content-wrapper">
+                    <div class="message-header">
+                        <span class="username">{{ message.author.username }}</span>
+                        <span class="timestamp">
+                            {% set created_at_jst = message.created_at.replace(tzinfo=utc).astimezone(jst) %}
+                            {{ created_at_jst.strftime('%Y年%m月%d日 %H:%M') }}
+                            {% if message.is_edited %}
+                            <span class="edited-mark">（編集済み）</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="message-content" id="message-content-{{ message.id }}">
+                        {{ message.display_content|safe }}
+                        {% if message.image_url %}
+                        <div class="message-image">
+                            <a href="{{ message.image_url }}" target="_blank">
+                                <img src="{{ message.image_url }}" alt="添付画像" style="max-width: 300px; max-height: 300px; margin-top: 10px; border-radius: 5px;" width="300" height="200">
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="reactions" id="reactions-{{ message.id }}">
+                        {% for reaction in message.reactions %}
+                        <span class="reaction" 
+                              data-emoji="{{ reaction.emoji }}" 
+                              data-count="{{ reaction.count }}"
+                              onclick="toggleReaction('{{ message.id }}', '{{ reaction.emoji }}')">
+                            {{ reaction.emoji }} {{ reaction.count }}
+                        </span>
+                        {% endfor %}
+                        <div class="reaction-picker">
+                            <button onclick="toggleReactionPicker('{{ message.id }}')" class="reaction-btn-main" title="リアクションを追加">
+                                <span>😀</span>
+                            </button>
+                            <div class="reaction-options" id="reaction-options-{{ message.id }}">
+                                <button onclick="toggleReaction('{{ message.id }}', '👍')" class="reaction-option" title="いいね">👍</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% if message.user_id == session.get('user_id') %}
+                    <div class="message-actions">
+                        <button onclick="showEditForm('{{ message.id }}')" class="btn-action" title="編集">✎</button>
+                        <form id="delete-form-{{ message.id }}" action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" style="display: inline;">
+                            <button type="button" class="btn-action btn-delete" onclick="deleteMessage('{{ message.id }}')" title="削除">✕</button>
+                        </form>
+                    </div>
+                    <div class="edit-form" id="edit-form-{{ message.id }}" style="display: none;">
+                        <form action="/chat/messages/{{ message.id }}/edit" method="POST">
+                            <input type="text" name="content" value="{{ message.content|striptags }}" required>
+                            <button type="submit" class="btn-action">保存</button>
+                            <button type="button" class="btn-action" onclick="hideEditForm('{{ message.id }}')">キャンセル</button>
+                        </form>
                     </div>
                     {% endif %}
                 </div>
-                <div class="reactions" id="reactions-{{ message.id }}">
-                    {% for reaction in message.reactions %}
-                    <span class="reaction" 
-                          data-emoji="{{ reaction.emoji }}" 
-                          data-count="{{ reaction.count }}"
-                          onclick="toggleReaction('{{ message.id }}', '{{ reaction.emoji }}')">
-                        {{ reaction.emoji }} {{ reaction.count }}
-                    </span>
-                    {% endfor %}
-                    <div class="reaction-picker">
-                        <button onclick="toggleReactionPicker('{{ message.id }}')" class="reaction-btn-main" title="リアクションを追加">
-                            <span>😀</span>
-                        </button>
-                        <div class="reaction-options" id="reaction-options-{{ message.id }}">
-                            <button onclick="toggleReaction('{{ message.id }}', '👍')" class="reaction-option" title="いいね">👍</button>
-                            <button onclick="toggleReaction('{{ message.id }}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
-                            <button onclick="toggleReaction('{{ message.id }}', '😊')" class="reaction-option" title="うれしい">😊</button>
-                        </div>
-                    </div>
-                </div>
-                {% if message.user_id == session.get('user_id') %}
-                <div class="message-actions">
-                    <button onclick="showEditForm('{{ message.id }}')" class="btn-action" title="編集">✎</button>
-                    <form id="delete-form-{{ message.id }}" action="{{ url_for('chat.delete_message', message_id=message.id) }}" method="POST" style="display: inline;">
-                        <button type="button" class="btn-action btn-delete" onclick="deleteMessage('{{ message.id }}')" title="削除">✕</button>
-                    </form>
-                </div>
-                <div class="edit-form" id="edit-form-{{ message.id }}" style="display: none;">
-                    <form action="/chat/messages/{{ message.id }}/edit" method="POST">
-                        <input type="text" name="content" value="{{ message.content|striptags }}" required>
-                        <button type="submit" class="btn-action">保存</button>
-                        <button type="button" class="btn-action" onclick="hideEditForm('{{ message.id }}')">キャンセル</button>
-                    </form>
-                </div>
-                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -1433,15 +1487,29 @@ function createMessageElement(message) {
     
     // メッセージHTML生成
     let html = `
-        <div class="message-header">
-            <span class="username">${message.username || ''}</span>
-            <span class="timestamp">
-                ${message.created_at || ''}
-                ${message.is_edited ? '<span class="edited-mark">（編集済み）</span>' : ''}
-            </span>
+        <div class="message-avatar">
+    `;
+    
+    // アバター表示（アバターURLがあれば画像、なければユーザー名の頭文字）
+    if (message.avatar_url) {
+        html += `<img src="${message.avatar_url}" alt="${message.username}" class="avatar-icon" width="35" height="35">`;
+    } else {
+        const initial = message.username ? message.username[0].toUpperCase() : '?';
+        html += `<span class="avatar-icon avatar-text">${initial}</span>`;
+    }
+    
+    html += `
         </div>
-        <div class="message-content" id="message-content-${message.id}">
-            ${message.content || ''}
+        <div class="message-content-wrapper">
+            <div class="message-header">
+                <span class="username">${message.username || ''}</span>
+                <span class="timestamp">
+                    ${message.created_at || ''}
+                    ${message.is_edited ? '<span class="edited-mark">（編集済み）</span>' : ''}
+                </span>
+            </div>
+            <div class="message-content" id="message-content-${message.id}">
+                ${message.content || ''}
     `;
     
     // 画像があれば追加
@@ -1449,7 +1517,7 @@ function createMessageElement(message) {
         html += `
             <div class="message-image">
                 <a href="${message.image_url}" target="_blank">
-                    <img src="${message.image_url}" alt="添付画像" style="max-width: 300px; max-height: 300px; margin-top: 10px; border-radius: 5px;">
+                    <img src="${message.image_url}" alt="添付画像" style="max-width: 300px; max-height: 300px; margin-top: 10px; border-radius: 5px;" width="300" height="200">
                 </a>
             </div>
         `;
@@ -1457,16 +1525,17 @@ function createMessageElement(message) {
     
     // リアクション部分
     html += `
-        </div>
-        <div class="reactions" id="reactions-${message.id}">
-            <div class="reaction-picker">
-                <button onclick="toggleReactionPicker('${message.id}')" class="reaction-btn-main" title="リアクションを追加">
-                    <span>😀</span>
-                </button>
-                <div class="reaction-options" id="reaction-options-${message.id}" style="display: none;">
-                    <button onclick="toggleReaction('${message.id}', '👍')" class="reaction-option" title="いいね">👍</button>
-                    <button onclick="toggleReaction('${message.id}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
-                    <button onclick="toggleReaction('${message.id}', '😊')" class="reaction-option" title="うれしい">😊</button>
+            </div>
+            <div class="reactions" id="reactions-${message.id}">
+                <div class="reaction-picker">
+                    <button onclick="toggleReactionPicker('${message.id}')" class="reaction-btn-main" title="リアクションを追加">
+                        <span>😀</span>
+                    </button>
+                    <div class="reaction-options" id="reaction-options-${message.id}" style="display: none;">
+                        <button onclick="toggleReaction('${message.id}', '👍')" class="reaction-option" title="いいね">👍</button>
+                        <button onclick="toggleReaction('${message.id}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
+                        <button onclick="toggleReaction('${message.id}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                    </div>
                 </div>
             </div>
         </div>
