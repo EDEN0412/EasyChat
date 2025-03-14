@@ -11,14 +11,6 @@
                     <h2 class="h4 text-center mb-0" style="color: var(--text-primary);">{{ user.username }}のプロフィール</h2>
                 </div>
                 <div class="card-body">
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }}">{{ message }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-                    
                     {% if current_user.id == user.id %}
                         <!-- 自分のプロフィールの場合は編集フォームを表示 -->
                         <form method="POST" action="{{ url_for('profile.edit') }}" enctype="multipart/form-data">
@@ -34,8 +26,8 @@
                                 {% endif %}
                                 
                                 <div class="mb-3">
-                                    <label for="{{ form.avatar.id }}" class="form-label" style="color: var(--text-primary);">{{ form.avatar.label.text }}</label>
-                                    {{ form.avatar(class="form-control form-control-sm") }}
+                                    <label for="avatar" class="form-label" style="color: var(--text-primary);">{{ form.avatar.label.text }}</label>
+                                    {{ form.avatar(class="form-control form-control-sm", id="avatar") }}
                                     {% if form.avatar.errors %}
                                         {% for error in form.avatar.errors %}
                                             <div class="text-danger small">{{ error }}</div>
@@ -45,8 +37,8 @@
                             </div>
                             
                             <div class="mb-4">
-                                <label for="{{ form.status_message.id }}" class="form-label" style="color: var(--text-primary);">{{ form.status_message.label.text }}</label>
-                                {{ form.status_message(class="form-control", placeholder="ステータスメッセージを入力してください") }}
+                                <label for="status_message" class="form-label" style="color: var(--text-primary);">{{ form.status_message.label.text }}</label>
+                                {{ form.status_message(class="form-control", placeholder="ステータスメッセージを入力してください", id="status_message") }}
                                 {% if form.status_message.errors %}
                                     {% for error in form.status_message.errors %}
                                             <div class="text-danger small">{{ error }}</div>
