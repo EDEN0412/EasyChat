@@ -654,8 +654,8 @@
 
 .account-menu {
     position: absolute;
-    top: 50px;
-    right: 10px;
+    top: -10px;
+    right: 50px;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 5px;
@@ -694,6 +694,12 @@
 
 .menu-item:hover {
     background-color: var(--bg-hover);
+}
+
+.menu-item-divider {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .menu-item-logout {
@@ -822,6 +828,76 @@
     text-align: center;
     color: var(--text-muted);
 }
+
+/* チャットレイアウト */
+.chat-layout {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* チャンネルおよびサイドバースタイル */
+.sidebar {
+    width: 280px;
+    min-width: 280px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* アバターアイコンのスタイル */
+.avatar-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--accent-color);
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* アカウントボタンコンテナのスタイル */
+.account-menu-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.account-button,
+.account-button-mobile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-secondary);
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.account-button:hover,
+.account-button-mobile:hover {
+    transform: scale(1.05);
+    background-color: var(--bg-hover);
+}
 </style>
 
 <div class="chat-layout">
@@ -872,21 +948,29 @@
                     <span class="search-icon">🔍</span>
                 </button>
                 <button class="account-button-mobile" title="アカウント設定">
-                    <span class="account-icon">👤</span>
+                    {% if current_user.avatar_url %}
+                        <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" class="avatar-icon" width="40" height="40">
+                    {% else %}
+                        <span class="avatar-icon avatar-text">{{ current_user.username[0] | upper }}</span>
+                    {% endif %}
                 </button>
             </div>
         </div>
         
         <div class="account-menu-container">
             <button class="account-button" title="アカウント設定">
-                <span class="account-icon">👤</span>
+                {% if current_user.avatar_url %}
+                    <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" class="avatar-icon" width="40" height="40">
+                {% else %}
+                    <span class="avatar-icon avatar-text">{{ current_user.username[0] | upper }}</span>
+                {% endif %}
             </button>
             <div class="account-menu" id="account-menu">
                 <div class="account-menu-header">
                     <span class="account-name">{{ session.get('username') }}</span>
                 </div>
                 <div class="account-menu-items">
-                    <a href="{{ url_for('profile.view', username=session.get('username')) }}" class="menu-item">
+                    <a href="{{ url_for('profile.view', username=session.get('username')) }}" class="menu-item menu-item-divider">
                         <span class="profile-icon">👤</span>
                         <span class="menu-text">プロフィール</span>
                     </a>
