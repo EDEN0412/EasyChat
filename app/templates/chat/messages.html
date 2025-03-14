@@ -1045,7 +1045,7 @@
         <div class="messages-area" id="messages-area">
             {% for message in messages %}
             <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
-                <div class="message-avatar" onclick="window.location.href='{{ url_for('profile.view', username=message.author.username) }}'">
+                <div class="message-avatar" onclick="window.location.href='/profile/{{ message.author.username }}'">
                     {% if message.author.avatar_url %}
                         <img src="{{ message.author.avatar_url }}" alt="{{ message.author.username }}" class="avatar-icon" width="35" height="35">
                     {% else %}
@@ -1488,7 +1488,7 @@ function createMessageElement(message) {
     
     // メッセージHTML生成
     let html = `
-        <div class="message-avatar" onclick="window.location.href='/profile/view/${encodeURIComponent(message.username)}'">
+        <div class="message-avatar" onclick="window.location.href='/profile/${encodeURIComponent(message.username)}'">
     `;
     
     // アバター表示（アバターURLがあれば画像、なければユーザー名の頭文字）

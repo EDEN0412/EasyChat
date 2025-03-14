@@ -96,6 +96,7 @@ def format_message(message):
         'raw_content': message.content,
         'user_id': message.user_id,
         'username': message.author.username,
+        'avatar_url': message.author.avatar_url,
         'created_at': created_at_jst.strftime('%Y年%m月%d日 %H:%M'),
         'is_edited': message.is_edited,
         'image_url': message.image_url,
