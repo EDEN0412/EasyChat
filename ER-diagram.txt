@@ -11,7 +11,6 @@
 - // 実装予定機能
 - avatar_url VARCHAR(255) NULL
 - status_message VARCHAR(255) NULL
-- theme_preference VARCHAR(20) NULL
 
 ### Channel (チャンネル)
 - PK: channel_id VARCHAR(255)

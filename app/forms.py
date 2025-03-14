@@ -10,9 +10,4 @@ class ProfileForm(FlaskForm):
     status_message = StringField('ステータスメッセージ', validators=[
         Length(max=255, message='ステータスメッセージは255文字以内で入力してください')
     ])
-    theme_preference = SelectField('テーマ設定', choices=[
-        ('light', 'ライトモード'),
-        ('dark', 'ダークモード'),
-        ('system', 'システム設定に合わせる')
-    ], default='system')
     submit = SubmitField('更新する') 

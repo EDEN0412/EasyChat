@@ -39,7 +39,6 @@ def edit():
             current_user.avatar_url = avatar_file
         
         current_user.status_message = form.status_message.data
-        current_user.theme_preference = form.theme_preference.data
         
         db.session.commit()
         flash('プロフィールが更新されました', 'success')
@@ -59,7 +58,5 @@ def view(username):
     if current_user.is_authenticated and current_user.id == user.id:
         form = ProfileForm()
         form.status_message.data = current_user.status_message
-        if current_user.theme_preference:
-            form.theme_preference.data = current_user.theme_preference
     
     return render_template('profile/view.html', user=user, form=form) 

@@ -10,7 +10,6 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(255), nullable=False)
     avatar_url = db.Column(db.String(255), nullable=True)
     status_message = db.Column(db.String(255), nullable=True)
-    theme_preference = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
