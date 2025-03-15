@@ -8,8 +8,9 @@ class User(db.Model, UserMixin):
     id = db.Column(db.String(255), primary_key=True)
     username = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    avatar_url = db.Column(db.String(255), nullable=True)
     status_message = db.Column(db.String(255), nullable=True)
+    avatar_bg_color = db.Column(db.String(20), nullable=True, default='#1d9bf0')  # デフォルトの背景色
+    avatar_text_color = db.Column(db.String(20), nullable=True, default='#ffffff')  # デフォルトのテキスト色
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -1046,11 +1046,9 @@
             {% for message in messages %}
             <div class="message {% if message.user_id == session.get('user_id') %}message-own{% endif %}" id="message-{{ message.id }}">
                 <div class="message-avatar" onclick="window.location.href='/profile/{{ message.author.username }}'">
-                    {% if message.author.avatar_url %}
-                        <img src="{{ message.author.avatar_url }}" alt="{{ message.author.username }}" class="avatar-icon" width="35" height="35">
-                    {% else %}
-                        <span class="avatar-icon avatar-text">{{ message.author.username[0] | upper }}</span>
-                    {% endif %}
+                    <span class="avatar-icon avatar-text" style="background-color: {{ message.author.avatar_bg_color or '#1d9bf0' }}; color: {{ message.author.avatar_text_color or '#ffffff' }};">
+                        {{ message.author.username[0] | upper }}
+                    </span>
                 </div>
                 <div class="message-content-wrapper">
                     <div class="message-header">
@@ -1491,13 +1489,11 @@ function createMessageElement(message) {
         <div class="message-avatar" onclick="window.location.href='/profile/${encodeURIComponent(message.username)}'">
     `;
     
-    // アバター表示（アバターURLがあれば画像、なければユーザー名の頭文字）
-    if (message.avatar_url) {
-        html += `<img src="${message.avatar_url}" alt="${message.username}" class="avatar-icon" width="35" height="35">`;
-    } else {
-        const initial = message.username ? message.username[0].toUpperCase() : '?';
-        html += `<span class="avatar-icon avatar-text">${initial}</span>`;
-    }
+    // アバター表示（ユーザー名の頭文字）
+    const initial = message.username ? message.username[0].toUpperCase() : '?';
+    const bgColor = message.avatar_bg_color || '#1d9bf0';
+    const textColor = message.avatar_text_color || '#ffffff';
+    html += `<span class="avatar-icon avatar-text" style="background-color: ${bgColor}; color: ${textColor};">${initial}</span>`;
     
     html += `
         </div>

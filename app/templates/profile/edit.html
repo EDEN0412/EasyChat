@@ -11,23 +11,36 @@
                     <h2 class="h4 text-center mb-0" style="color: var(--text-primary);">プロフィール編集</h2>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('profile.edit') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ url_for('profile.edit') }}">
                         {{ form.hidden_tag() }}
                         
                         <div class="mb-4 text-center">
-                            {% if current_user.avatar_url %}
-                                <img src="{{ current_user.avatar_url }}" alt="現在のアバター" class="rounded-circle mb-3" width="120" height="120" style="object-fit: cover;">
-                            {% else %}
-                                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; border: 1px solid var(--border-color); background-color: var(--bg-message);">
-                                    <span style="font-size: 2.5rem; color: var(--text-primary);">{{ current_user.username[0] | upper }}</span>
+                            <div id="avatar-preview">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" 
+                                     style="width: 120px; height: 120px; border: 1px solid var(--border-color); 
+                                            background-color: {{ current_user.avatar_bg_color or '#1d9bf0' }};">
+                                    <span style="font-size: 2.5rem; color: {{ current_user.avatar_text_color or '#ffffff' }};">
+                                        {{ current_user.username[0] | upper }}
+                                    </span>
                                 </div>
-                            {% endif %}
-                            
-                            <div class="mb-3">
-                                <label for="avatar" class="form-label" style="color: var(--text-primary);">{{ form.avatar.label.text }}</label>
-                                {{ form.avatar(class="form-control form-control-sm", id="avatar") }}
-                                {% if form.avatar.errors %}
-                                    {% for error in form.avatar.errors %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="avatar_bg_color" class="form-label" style="color: var(--text-primary);">{{ form.avatar_bg_color.label.text }}</label>
+                                {{ form.avatar_bg_color(class="form-select", id="avatar_bg_color") }}
+                                {% if form.avatar_bg_color.errors %}
+                                    {% for error in form.avatar_bg_color.errors %}
+                                        <div class="text-danger small">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="avatar_text_color" class="form-label" style="color: var(--text-primary);">{{ form.avatar_text_color.label.text }}</label>
+                                {{ form.avatar_text_color(class="form-select", id="avatar_text_color") }}
+                                {% if form.avatar_text_color.errors %}
+                                    {% for error in form.avatar_text_color.errors %}
                                         <div class="text-danger small">{{ error }}</div>
                                     {% endfor %}
                                 {% endif %}
@@ -57,4 +70,34 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const bgColorSelect = document.getElementById('avatar_bg_color');
+        const textColorSelect = document.getElementById('avatar_text_color');
+        const previewContainer = document.getElementById('avatar-preview');
+        const username = "{{ current_user.username }}";
+        
+        // 色選択が変更されたときのプレビュー更新
+        function updatePreview() {
+            const bgColor = bgColorSelect.value;
+            const textColor = textColorSelect.value;
+            const initial = username.charAt(0).toUpperCase();
+            
+            previewContainer.innerHTML = `
+                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" 
+                     style="width: 120px; height: 120px; border: 1px solid var(--border-color); 
+                            background-color: ${bgColor};">
+                    <span style="font-size: 2.5rem; color: ${textColor};">
+                        ${initial}
+                    </span>
+                </div>
+            `;
+        }
+        
+        // 色選択の変更イベント
+        bgColorSelect.addEventListener('change', updatePreview);
+        textColorSelect.addEventListener('change', updatePreview);
+    });
+</script>
 {% endblock %} 

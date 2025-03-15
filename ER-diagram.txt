@@ -8,9 +8,10 @@
 - password_hash VARCHAR(255)
 - created_at TIMESTAMP
 - updated_at TIMESTAMP
-- // 実装予定機能
-- avatar_url VARCHAR(255) NULL
+- // プロフィール関連
 - status_message VARCHAR(255) NULL
+- avatar_bg_color VARCHAR(20) DEFAULT '#1d9bf0'
+- avatar_text_color VARCHAR(20) DEFAULT '#ffffff'
 
 ### Channel (チャンネル)
 - PK: channel_id VARCHAR(255)
