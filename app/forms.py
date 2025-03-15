@@ -18,10 +18,13 @@ class ProfileForm(FlaskForm):
         ('#868e96', 'グレー'),
         ('#212529', 'ブラック')
     ])
-    avatar_text_color = SelectField('テキスト色', choices=[
+    avatar_text_color = SelectField('アバターテキスト色', choices=[
         ('#ffffff', 'ホワイト'),
         ('#000000', 'ブラック'),
-        ('#f8f9fa', 'ライトグレー'),
-        ('#212529', 'ダークグレー')
+        ('#ffe066', 'ライトイエロー'),
+        ('#c0eb75', 'ライトグリーン'),
+        ('#ff8787', 'ライトレッド'),
+        ('#74c0fc', 'ライトブルー'),
+        ('#b197fc', 'ライトパープル')
     ])
     submit = SubmitField('更新する') 

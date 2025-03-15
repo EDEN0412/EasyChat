@@ -29,21 +29,31 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label for="avatar_bg_color" class="form-label" style="color: var(--text-primary);">{{ form.avatar_bg_color.label.text }}</label>
-                                {{ form.avatar_bg_color(class="form-select", id="avatar_bg_color") }}
+                                {{ form.avatar_bg_color(class="form-select color-select", id="avatar_bg_color") }}
                                 {% if form.avatar_bg_color.errors %}
                                     {% for error in form.avatar_bg_color.errors %}
                                         <div class="text-danger small">{{ error }}</div>
                                     {% endfor %}
                                 {% endif %}
+                                <div class="color-preview-container mt-2">
+                                    {% for value, label in form.avatar_bg_color.choices %}
+                                    <div class="color-preview" style="background-color: {{ value }};" data-value="{{ value }}" data-target="avatar_bg_color" title="{{ label }}"></div>
+                                    {% endfor %}
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="avatar_text_color" class="form-label" style="color: var(--text-primary);">{{ form.avatar_text_color.label.text }}</label>
-                                {{ form.avatar_text_color(class="form-select", id="avatar_text_color") }}
+                                {{ form.avatar_text_color(class="form-select color-select", id="avatar_text_color") }}
                                 {% if form.avatar_text_color.errors %}
                                     {% for error in form.avatar_text_color.errors %}
                                         <div class="text-danger small">{{ error }}</div>
                                     {% endfor %}
                                 {% endif %}
+                                <div class="color-preview-container mt-2">
+                                    {% for value, label in form.avatar_text_color.choices %}
+                                    <div class="color-preview" style="background-color: {{ value }};" data-value="{{ value }}" data-target="avatar_text_color" title="{{ label }}"></div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                         
@@ -84,6 +94,10 @@
             const textColor = textColorSelect.value;
             const initial = username.charAt(0).toUpperCase();
             
+            // 背景色と文字色のラベルを取得
+            const bgColorLabel = getColorLabel(bgColor, bgColorSelect);
+            const textColorLabel = getColorLabel(textColor, textColorSelect);
+            
             previewContainer.innerHTML = `
                 <div class="rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" 
                      style="width: 120px; height: 120px; border: 1px solid var(--border-color); 
@@ -92,12 +106,141 @@
                         ${initial}
                     </span>
                 </div>
+                <div class="color-info">
+                    <div class="color-info-item">
+                        <div class="color-info-swatch" style="background-color: ${bgColor};"></div>
+                        <div class="color-info-text">${bgColorLabel}</div>
+                    </div>
+                    <div class="color-info-item">
+                        <div class="color-info-swatch" style="background-color: ${textColor};"></div>
+                        <div class="color-info-text">${textColorLabel}</div>
+                    </div>
+                </div>
             `;
+        }
+        
+        // 色コードからラベルを取得する関数
+        function getColorLabel(colorValue, selectElement) {
+            for (let i = 0; i < selectElement.options.length; i++) {
+                if (selectElement.options[i].value === colorValue) {
+                    return selectElement.options[i].text;
+                }
+            }
+            return '';
         }
         
         // 色選択の変更イベント
         bgColorSelect.addEventListener('change', updatePreview);
         textColorSelect.addEventListener('change', updatePreview);
+        
+        // カラープレビューのクリックイベント
+        const colorPreviews = document.querySelectorAll('.color-preview');
+        colorPreviews.forEach(preview => {
+            preview.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const targetId = this.getAttribute('data-target');
+                document.getElementById(targetId).value = value;
+                
+                // アクティブなプレビューをハイライト
+                document.querySelectorAll(`.color-preview[data-target="${targetId}"]`).forEach(el => {
+                    el.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // プレビュー更新
+                updatePreview();
+            });
+        });
+        
+        // 初期表示時にアクティブな色をハイライト
+        function highlightActiveColors() {
+            const bgColor = bgColorSelect.value;
+            const textColor = textColorSelect.value;
+            
+            document.querySelector(`.color-preview[data-value="${bgColor}"][data-target="avatar_bg_color"]`)?.classList.add('active');
+            document.querySelector(`.color-preview[data-value="${textColor}"][data-target="avatar_text_color"]`)?.classList.add('active');
+        }
+        
+        // 初期化
+        updatePreview();
+        highlightActiveColors();
     });
 </script>
+
+<style>
+    .color-preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .color-preview {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid var(--border-color);
+        transition: transform 0.2s;
+        position: relative;
+    }
+    
+    .color-preview:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        z-index: 1;
+    }
+    
+    .color-preview.active {
+        border: 3px solid var(--primary-color);
+        transform: scale(1.2);
+        box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+    
+    /* 白色のプレビューが見えるようにする */
+    .color-preview[data-value="#ffffff"] {
+        border: 2px solid #ccc;
+    }
+    
+    /* 色名のツールチップ */
+    .color-preview:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0,0,0,0.8);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 10;
+    }
+    
+    /* 色情報の表示スタイル */
+    .color-info {
+        margin-top: 10px;
+        text-align: center;
+    }
+    
+    .color-info-item {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 8px;
+        color: var(--text-primary);
+    }
+    
+    .color-info-swatch {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        margin-right: 6px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .color-info-text {
+        font-size: 14px;
+    }
+</style>
 {% endblock %} 
