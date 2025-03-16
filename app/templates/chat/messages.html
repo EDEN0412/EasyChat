@@ -277,8 +277,7 @@
         top: 0;
         left: -280px;
         width: 280px;
-        height: 100%;
-        min-height: 100vh;
+        height: 100vh;
         background-color: var(--bg-sidebar);
         z-index: 1001;
         transition: left 0.3s ease;
@@ -293,7 +292,7 @@
         left: 0;
         bottom: 0;
         height: 100%;
-        min-height: 100vh;
+        position: fixed;
     }
 
     /* オーバーレイの調整 */
@@ -1004,6 +1003,33 @@
 .message-content-wrapper {
     flex-grow: 1;
     overflow: hidden;
+}
+
+/* PC版向けのサイドバースタイル */
+@media (min-width: 768px) {
+    .chat-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        grid-template-areas: "sidebar main";
+    }
+    
+    .sidebar {
+        grid-area: sidebar;
+        position: relative;
+        left: 0;
+        width: 280px;
+        height: 100vh;
+    }
+    
+    .chat-container {
+        grid-area: main;
+        margin-left: 0;
+    }
+    
+    /* PC版ではハンバーガーメニューを非表示 */
+    .menu-toggle, .menu-toggle-mobile {
+        display: none;
+    }
 }
 </style>
 
@@ -1762,6 +1788,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // PC版表示時の調整（サイドバーを表示）
+    const sidebar = document.getElementById('sidebar');
+    if (window.innerWidth >= 768 && sidebar) {
+        sidebar.classList.add('show');
+    }
+    
     // モバイル表示時の調整
     if (window.innerWidth <= 767) {
         // 入力フォームの高さを取得
@@ -1776,6 +1808,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
+    
+    // ウィンドウサイズ変更時の処理
+    window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            if (window.innerWidth >= 768) {
+                sidebar.classList.add('show');
+            } else {
+                sidebar.classList.remove('show');
+            }
+        }
+    });
 });
 
 // フラッシュメッセージを表示する関数

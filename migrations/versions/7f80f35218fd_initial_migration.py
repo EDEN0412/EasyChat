@@ -1,8 +1,8 @@
-"""initial migration
+"""Initial migration
 
-Revision ID: 145b77b963b0
+Revision ID: 7f80f35218fd
 Revises: 
-Create Date: 2025-03-08 10:12:21.820004
+Create Date: 2025-03-16 16:19:08.837982
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '145b77b963b0'
+revision = '7f80f35218fd'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,6 +22,10 @@ def upgrade():
     sa.Column('id', sa.String(length=255), nullable=False),
     sa.Column('username', sa.String(length=255), nullable=False),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('status_message', sa.String(length=255), nullable=True),
+    sa.Column('avatar_bg_color', sa.String(length=20), nullable=True),
+    sa.Column('avatar_text_color', sa.String(length=20), nullable=True),
+    sa.Column('avatar_url', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -41,6 +45,7 @@ def upgrade():
     sa.Column('channel_id', sa.String(length=255), nullable=False),
     sa.Column('user_id', sa.String(length=255), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('image_url', sa.String(length=255), nullable=True),
     sa.Column('is_edited', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
