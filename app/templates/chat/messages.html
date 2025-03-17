@@ -353,13 +353,9 @@
     /* モバイル用アカウントメニューの位置調整 */
     .account-menu {
         position: fixed;
-        top: 50px;
-        right: 0;
-        width: 200px;
-        z-index: 1002;
-        background-color: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        top: 60px;
+        right: 10px;
+        z-index: 10000;
     }
 }
 
@@ -691,8 +687,7 @@
     border-radius: 5px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     min-width: 200px;
-    z-index: 1000;
-    display: none;
+    z-index: 10000;
 }
 
 .account-menu-header {
@@ -933,7 +928,17 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 100;
+    z-index: 10000;
+}
+
+/* PC版のアカウントメニューコンテナのスタイル */
+@media (min-width: 768px) {
+    .account-menu-container {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+    }
 }
 
 .account-button,
@@ -1171,6 +1176,11 @@
                                 <button onclick="toggleReaction('{{ message.id }}', '👍')" class="reaction-option" title="いいね">👍</button>
                                 <button onclick="toggleReaction('{{ message.id }}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
                                 <button onclick="toggleReaction('{{ message.id }}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '😂')" class="reaction-option" title="笑う">😂</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '🎉')" class="reaction-option" title="お祝い">🎉</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '😮')" class="reaction-option" title="驚き">😮</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '😢')" class="reaction-option" title="悲しい">😢</button>
+                                <button onclick="toggleReaction('{{ message.id }}', '👏')" class="reaction-option" title="拍手">👏</button>
                             </div>
                         </div>
                     </div>
@@ -1293,6 +1303,196 @@ const socket = io();
 const messagesArea = document.getElementById('messages-area');
 const messageForm = document.getElementById('message-form');
 const currentUserId = '{{ session.get("user_id") }}';
+
+// 現在開いているリアクションオプションを追跡する変数
+let currentOpenReactionOptions = null;
+let currentReactionButtonRect = null;
+let currentMessageId = null;
+
+// リアクションピッカーの表示/非表示を切り替え
+function toggleReactionPicker(messageId) {
+    const options = document.getElementById(`reaction-options-${messageId}`);
+    const button = document.querySelector(`button[onclick="toggleReactionPicker('${messageId}')"]`);
+    const reactionContainer = document.getElementById(`reactions-${messageId}`);
+    
+    if (options && button) {
+        const buttonRect = button.getBoundingClientRect();
+        const isMobile = window.innerWidth <= 767;
+        
+        if (options.style.display === 'none' || !options.classList.contains('show')) {
+            // 位置を設定
+            options.style.position = 'fixed';
+            
+            // 他のすべての要素より上に表示するためにbody直下に移動
+            document.body.appendChild(options);
+            
+            // リアクションの位置設定
+            positionReactionOptions(options, buttonRect, isMobile);
+            
+            // 表示
+            options.style.display = 'flex';
+            options.classList.add('show');
+            
+            // 現在開いているリアクションオプションを追跡
+            currentOpenReactionOptions = options;
+            currentReactionButtonRect = buttonRect;
+            currentMessageId = messageId;
+            
+            // 元の位置を記憶
+            options.dataset.originalParent = messageId;
+        } else {
+            // 非表示
+            options.style.display = 'none';
+            options.classList.remove('show');
+            
+            // 追跡変数をリセット
+            currentOpenReactionOptions = null;
+            currentReactionButtonRect = null;
+            currentMessageId = null;
+            
+            // 元の場所に戻す
+            if (options.dataset.originalParent && reactionContainer) {
+                const picker = reactionContainer.querySelector('.reaction-picker');
+                if (picker) {
+                    picker.appendChild(options);
+                }
+            }
+        }
+        
+        // 他のリアクションピッカーを閉じる
+        document.querySelectorAll('.reaction-options.show').forEach(el => {
+            if (el.id !== `reaction-options-${messageId}`) {
+                el.style.display = 'none';
+                el.classList.remove('show');
+                
+                // 元の場所に戻す
+                const originalParentId = el.dataset.originalParent;
+                if (originalParentId) {
+                    const originalContainer = document.getElementById(`reactions-${originalParentId}`);
+                    if (originalContainer) {
+                        const picker = originalContainer.querySelector('.reaction-picker');
+                        if (picker) {
+                            picker.appendChild(el);
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// リアクションオプションの位置を設定する関数
+function positionReactionOptions(options, buttonRect, isMobile) {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    if (isMobile) {
+        // モバイル表示時もボタンの位置に基づいて配置
+        // 画面上の位置によって調整
+        const isTopHalf = buttonRect.top < windowHeight / 2;
+        
+        if (isTopHalf) {
+            // 上半分の場合は下に表示
+            options.style.top = `${buttonRect.bottom + 5}px`;
+            options.style.bottom = 'auto';
+        } else {
+            // 下半分の場合は上に表示
+            options.style.bottom = `${windowHeight - buttonRect.top + 5}px`;
+            options.style.top = 'auto';
+        }
+        
+        // 左右の位置調整
+        if (buttonRect.left < 140) {
+            // 左端に近い場合は右寄せしない
+            options.style.left = '10px';
+            options.style.transform = 'none';
+        } else if (buttonRect.right > windowWidth - 140) {
+            // 右端に近い場合は左寄せ
+            options.style.left = 'auto';
+            options.style.right = '10px';
+            options.style.transform = 'none';
+        } else {
+            // それ以外は中央寄せ
+            options.style.left = `${buttonRect.left - 100}px`;
+            options.style.right = 'auto';
+            options.style.transform = 'none';
+        }
+    } else {
+        // PC表示時はボタンの下に表示
+        options.style.top = `${buttonRect.bottom + 5}px`;
+        options.style.left = `${buttonRect.left - 240}px`; // 右寄せにするため左から調整
+        options.style.transform = 'none';
+        options.style.bottom = 'auto';
+        options.style.right = 'auto';
+    }
+}
+
+// スクロールイベントリスナーを追加
+messagesArea.addEventListener('scroll', function() {
+    // リアクションオプションが開いている場合のみ処理
+    if (currentOpenReactionOptions && currentReactionButtonRect && currentMessageId) {
+        // ボタンの現在位置を取得
+        const button = document.querySelector(`button[onclick="toggleReactionPicker('${currentMessageId}')"]`);
+        if (button) {
+            const newButtonRect = button.getBoundingClientRect();
+            const isMobile = window.innerWidth <= 767;
+            
+            // 位置を更新
+            positionReactionOptions(currentOpenReactionOptions, newButtonRect, isMobile);
+            
+            // ボタンの位置を更新
+            currentReactionButtonRect = newButtonRect;
+        }
+    }
+});
+
+// ドキュメント全体のクリックイベントリスナーを追加
+document.addEventListener('click', function(event) {
+    // リアクションオプションが開いている場合のみ処理
+    if (currentOpenReactionOptions && currentReactionButtonRect && currentMessageId) {
+        // クリックされた要素がリアクションオプション内かリアクションボタン自身でなければ閉じる
+        const isReactionOption = event.target.closest('.reaction-options');
+        const isReactionButton = event.target.closest(`button[onclick="toggleReactionPicker('${currentMessageId}')"]`);
+        
+        if (!isReactionOption && !isReactionButton) {
+            // 非表示
+            currentOpenReactionOptions.style.display = 'none';
+            currentOpenReactionOptions.classList.remove('show');
+            
+            // 元の場所に戻す
+            const reactionContainer = document.getElementById(`reactions-${currentMessageId}`);
+            if (reactionContainer) {
+                const picker = reactionContainer.querySelector('.reaction-picker');
+                if (picker) {
+                    picker.appendChild(currentOpenReactionOptions);
+                }
+            }
+            
+            // 追跡変数をリセット
+            currentOpenReactionOptions = null;
+            currentReactionButtonRect = null;
+            currentMessageId = null;
+        }
+    }
+});
+
+// リサイズイベントリスナーも追加
+window.addEventListener('resize', function() {
+    // リアクションオプションが開いている場合のみ処理
+    if (currentOpenReactionOptions && currentReactionButtonRect && currentMessageId) {
+        const button = document.querySelector(`button[onclick="toggleReactionPicker('${currentMessageId}')"]`);
+        if (button) {
+            const newButtonRect = button.getBoundingClientRect();
+            const isMobile = window.innerWidth <= 767;
+            
+            // 位置を更新
+            positionReactionOptions(currentOpenReactionOptions, newButtonRect, isMobile);
+            
+            // ボタンの位置を更新
+            currentReactionButtonRect = newButtonRect;
+        }
+    }
+});
 
 // メッセージ送信のイベントハンドラ
 messageForm.addEventListener('submit', function(e) {
@@ -1522,12 +1722,12 @@ function updateReactions(container, reactions) {
     
     // リアクションピッカーを再追加
     container.appendChild(reactionPicker);
-}
-
-// リアクションピッカーの表示/非表示を切り替え
-function toggleReactionPicker(messageId) {
-    const options = document.getElementById(`reaction-options-${messageId}`);
-    options.style.display = options.style.display === 'none' ? 'flex' : 'none';
+    
+    // リアクションオプションが表示されていない場合は非表示に
+    const options = container.querySelector('.reaction-options');
+    if (options && !options.classList.contains('show')) {
+        options.style.display = 'none';
+    }
 }
 
 // メッセージ編集フォームの表示/非表示
@@ -1615,6 +1815,11 @@ function createMessageElement(message) {
                         <button onclick="toggleReaction('${message.id}', '👍')" class="reaction-option" title="いいね">👍</button>
                         <button onclick="toggleReaction('${message.id}', '❤️')" class="reaction-option" title="お気に入り">❤️</button>
                         <button onclick="toggleReaction('${message.id}', '😊')" class="reaction-option" title="うれしい">😊</button>
+                        <button onclick="toggleReaction('${message.id}', '😂')" class="reaction-option" title="笑う">😂</button>
+                        <button onclick="toggleReaction('${message.id}', '🎉')" class="reaction-option" title="お祝い">🎉</button>
+                        <button onclick="toggleReaction('${message.id}', '😮')" class="reaction-option" title="驚き">😮</button>
+                        <button onclick="toggleReaction('${message.id}', '😢')" class="reaction-option" title="悲しい">😢</button>
+                        <button onclick="toggleReaction('${message.id}', '👏')" class="reaction-option" title="拍手">👏</button>
                     </div>
                 </div>
             </div>
@@ -1650,7 +1855,7 @@ function formatMentions(text) {
 }
 
 // メンション機能
-let users = {{ users|tojson|safe }};
+const users = JSON.parse('{{ users|tojson|safe }}');
 let mentionStart = -1;
 let mentionText = '';
 
@@ -1820,6 +2025,58 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // アカウントボタンのクリックイベントを設定
+    const accountButton = document.querySelector('.account-button');
+    if (accountButton) {
+        accountButton.addEventListener('click', function(event) {
+            event.stopPropagation(); // イベント伝播を停止
+            toggleAccountMenu();
+        });
+    }
+    
+    // モバイル用アカウントボタンのクリックイベントを設定
+    const accountButtonMobile = document.querySelector('.account-button-mobile');
+    if (accountButtonMobile) {
+        accountButtonMobile.addEventListener('click', function(event) {
+            event.stopPropagation(); // イベント伝播を停止
+            toggleAccountMenu();
+        });
+    }
+    
+    // モバイル用検索ボタンのクリックイベントを設定
+    const searchButtonMobile = document.querySelector('.search-button-mobile');
+    if (searchButtonMobile) {
+        searchButtonMobile.addEventListener('click', function() {
+            showSearchModal();
+        });
+    }
+    
+    // 初期状態でメニューを非表示にする
+    const accountMenu = document.getElementById('account-menu');
+    if (accountMenu) {
+        accountMenu.style.display = 'none';
+    }
+    
+    // 検索入力欄でのEnterキー処理を追加
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchMessages();
+            }
+        });
+    }
+    
+    // 検索モーダル外クリックで閉じる処理を追加
+    const searchModal = document.getElementById('search-modal');
+    if (searchModal) {
+        searchModal.addEventListener('click', function(event) {
+            if (event.target === searchModal) {
+                closeSearchModal();
+            }
+        });
+    }
 });
 
 // フラッシュメッセージを表示する関数
@@ -2010,17 +2267,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// 通知音再生
-function playNotificationSound() {
-    try {
-        const audio = new Audio('/static/sounds/notification.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(e => console.log('通知音再生エラー:', e));
-    } catch (e) {
-        console.log('通知音機能エラー:', e);
-    }
-}
-
 // 検索モーダルを表示する関数
 function showSearchModal() {
     document.getElementById('search-modal').style.display = 'flex';
@@ -2032,112 +2278,6 @@ function closeSearchModal() {
     document.getElementById('search-modal').style.display = 'none';
     document.getElementById('search-results').innerHTML = '';
     document.getElementById('search-input').value = '';
-}
-
-// モーダル外クリックで閉じる処理を追加
-document.addEventListener('DOMContentLoaded', function() {
-    const searchModal = document.getElementById('search-modal');
-    const channelSearchModal = document.getElementById('channel-search-modal');
-    
-    // モーダル外クリックで閉じる
-    searchModal.addEventListener('click', function(event) {
-        if (event.target === searchModal) {
-            closeSearchModal();
-        }
-    });
-    
-    // チャンネル検索モーダル外クリックで閉じる
-    channelSearchModal.addEventListener('click', function(event) {
-        if (event.target === channelSearchModal) {
-            closeChannelSearchModal();
-        }
-    });
-    
-    // アカウントボタンのクリックイベントを設定
-    const accountButton = document.querySelector('.account-button');
-    if (accountButton) {
-        accountButton.addEventListener('click', function(event) {
-            event.stopPropagation(); // イベント伝播を停止
-            toggleAccountMenu();
-        });
-    }
-    
-    // モバイル用アカウントボタンのクリックイベントを設定
-    const accountButtonMobile = document.querySelector('.account-button-mobile');
-    if (accountButtonMobile) {
-        accountButtonMobile.addEventListener('click', function(event) {
-            event.stopPropagation(); // イベント伝播を停止
-            toggleAccountMenu();
-        });
-    }
-    
-    // モバイル用検索ボタンのクリックイベントを設定
-    const searchButtonMobile = document.querySelector('.search-button-mobile');
-    if (searchButtonMobile) {
-        searchButtonMobile.addEventListener('click', function() {
-            showSearchModal();
-        });
-    }
-});
-
-// チャンネル検索モーダルを表示する関数
-function showChannelSearchModal(event) {
-    document.getElementById('channel-search-modal').style.display = 'flex';
-    document.getElementById('channel-search-input').focus();
-    
-    // 初期表示時に全チャンネルを表示
-    searchChannels();
-    
-    // イベント伝播を防止
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-}
-
-// チャンネル検索モーダルを閉じる関数
-function closeChannelSearchModal() {
-    document.getElementById('channel-search-modal').style.display = 'none';
-    document.getElementById('channel-search-results').innerHTML = '';
-    document.getElementById('channel-search-input').value = '';
-}
-
-// チャンネルを検索する関数
-function searchChannels() {
-    const searchInput = document.getElementById('channel-search-input');
-    const searchTerm = searchInput.value.toLowerCase();
-    const resultsContainer = document.getElementById('channel-search-results');
-    
-    // チャンネルデータを作成
-    const channelsData = [
-    {% for channel in channels %}
-        {
-            id: "{{ channel.id }}",
-            name: "{{ channel.name }}",
-            isActive: {{ 'true' if channel.id == current_channel.id else 'false' }}
-        }{{ ',' if not loop.last }}
-    {% endfor %}
-    ];
-    
-    // 検索結果をフィルタリング
-    let filteredChannels = channelsData;
-    if (searchTerm) {
-        filteredChannels = channelsData.filter(channel => 
-            channel.name.toLowerCase().includes(searchTerm)
-        );
-    }
-    
-    // 結果を表示
-    if (filteredChannels.length > 0) {
-        resultsContainer.innerHTML = filteredChannels.map(channel => `
-            <div class="channel-search-result-item ${channel.isActive ? 'active' : ''}" 
-                 onclick="window.location.href='/chat/messages/${channel.id}'">
-                <div class="channel-name"># ${channel.name}</div>
-            </div>
-        `).join('');
-    } else {
-        resultsContainer.innerHTML = '<div class="channel-search-no-results">チャンネルが見つかりませんでした</div>';
-    }
 }
 
 // 検索を実行する関数
@@ -2196,14 +2336,92 @@ function searchMessages() {
         });
 }
 
-// Enterキーで検索を実行
+// チャンネル検索モーダルを表示する関数
+function showChannelSearchModal(event) {
+    document.getElementById('channel-search-modal').style.display = 'flex';
+    document.getElementById('channel-search-input').focus();
+    
+    // 初期表示時に全チャンネルを表示
+    searchChannels();
+    
+    // イベント伝播を防止
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}
+
+// チャンネル検索モーダルを閉じる関数
+function closeChannelSearchModal() {
+    document.getElementById('channel-search-modal').style.display = 'none';
+    document.getElementById('channel-search-results').innerHTML = '';
+    document.getElementById('channel-search-input').value = '';
+}
+
+// チャンネルを検索する関数
+function searchChannels() {
+    const searchInput = document.getElementById('channel-search-input');
+    const searchTerm = searchInput.value.toLowerCase();
+    const resultsContainer = document.getElementById('channel-search-results');
+    
+    // チャンネルデータを作成
+    const channelsData = [
+    {% for channel in channels %}
+        {
+            id: "{{ channel.id }}",
+            name: "{{ channel.name }}",
+            isActive: {% if channel.id == current_channel.id %}true{% else %}false{% endif %}
+        }{% if not loop.last %},{% endif %}
+    {% endfor %}
+    ];
+    
+    // 検索結果をフィルタリング
+    let filteredChannels = channelsData;
+    if (searchTerm) {
+        filteredChannels = channelsData.filter(channel => 
+            channel.name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // 結果を表示
+    if (filteredChannels.length > 0) {
+        resultsContainer.innerHTML = filteredChannels.map(channel => `
+            <div class="channel-search-result-item ${channel.isActive ? 'active' : ''}" 
+                 onclick="window.location.href='/chat/messages/${channel.id}'">
+                <div class="channel-name"># ${channel.name}</div>
+            </div>
+        `).join('');
+    } else {
+        resultsContainer.innerHTML = '<div class="channel-search-no-results">チャンネルが見つかりませんでした</div>';
+    }
+}
+
+// DOMContentLoadedイベントリスナーを強化
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchMessages();
+    // 既存のコード...
+    
+    // チャンネル検索モーダル外クリックで閉じる処理を追加
+    const channelSearchModal = document.getElementById('channel-search-modal');
+    if (channelSearchModal) {
+        channelSearchModal.addEventListener('click', function(event) {
+            if (event.target === channelSearchModal) {
+                closeChannelSearchModal();
             }
+        });
+    }
+    
+    // チャンネル検索入力欄でのEnterキー処理を追加
+    const channelSearchInput = document.getElementById('channel-search-input');
+    if (channelSearchInput) {
+        channelSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchChannels();
+            }
+        });
+        
+        // 入力内容が変わったときにも検索を実行
+        channelSearchInput.addEventListener('input', function() {
+            searchChannels();
         });
     }
 });

@@ -362,6 +362,8 @@
             flex-direction: column;
             gap: 16px;
             margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
         }
 
         .message {
@@ -371,6 +373,7 @@
             border-radius: 4px;
             color: var(--text-primary);
             max-width: 95%;
+            z-index: 2;
         }
 
         .message-header {
@@ -511,21 +514,25 @@
         .reaction {
             display: inline-flex;
             align-items: center;
-            padding: 4px 8px;
+            padding: 6px 10px;
             background-color: var(--bg-secondary);
             border-radius: 12px;
-            font-size: 0.9em;
+            font-size: 1.0em;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
             color: var(--text-secondary);
             border: 1px solid var(--border-color);
             user-select: none;
             transform: translateY(0);
+            margin: 2px;
+            min-width: 45px;
+            justify-content: center;
         }
 
         .reaction:hover {
             background-color: var(--bg-message);
             color: var(--text-primary);
+            transform: scale(1.05);
         }
 
         .reaction:active {
@@ -534,12 +541,13 @@
 
         .reaction-own {
             background-color: var(--accent-color);
-            color: var(--text-primary);
+            color: white;
         }
 
         .reaction-picker {
             margin-left: auto;
             position: relative;
+            z-index: 1000;
         }
 
         .reaction-btn-main {
@@ -552,10 +560,17 @@
             transition: all 0.2s;
             color: var(--text-secondary);
             transform: translateY(0);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
 
         .reaction-btn-main:hover {
             opacity: 1;
+            background-color: var(--bg-message);
         }
 
         .reaction-btn-main:active {
@@ -564,36 +579,58 @@
 
         .reaction-options {
             display: none;
-            position: absolute;
-            bottom: 100%;
-            right: 0;
+            position: fixed;
             background-color: var(--bg-secondary);
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            padding: 8px;
-            margin-bottom: 8px;
-            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            padding: 12px;
+            z-index: 9999;
             border: 1px solid var(--border-color);
+            max-width: 280px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 280px;
+            pointer-events: auto;
         }
 
         .reaction-options.show {
             display: flex;
-            gap: 8px;
+            gap: 10px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .reaction-option {
-            background: none;
-            border: none;
-            padding: 8px;
-            font-size: 1.2em;
+            background-color: var(--bg-message);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 1.4em;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
             color: var(--text-primary);
             transform: translateY(0);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .reaction-option:hover {
             transform: scale(1.1);
+            background-color: var(--accent-color);
+            color: white;
         }
 
         .reaction-option:active {
@@ -1138,7 +1175,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 10000;
         }
 
         .account-button {
@@ -1171,6 +1208,7 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             min-width: 200px;
             overflow: hidden;
+            z-index: 10000;
         }
 
         .account-menu.show {
