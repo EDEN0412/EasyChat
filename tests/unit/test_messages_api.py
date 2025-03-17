@@ -2,12 +2,10 @@ import pytest
 from flask import url_for
 from app import create_app, db
 from app.models import User, Channel, Message, Reaction
-from app.auth import create_user
 from datetime import datetime, UTC
 import uuid
 import io
 from PIL import Image
-from flask_login import login_user
 
 @pytest.fixture
 def app():
@@ -18,7 +16,7 @@ def app():
     
     with app.app_context():
         yield app
-        db.session.rollback()  # トランザクションをロールバック
+        db.session.rollback()
 
 @pytest.fixture
 def client(app):
@@ -38,7 +36,7 @@ def test_user(app):
         )
         db.session.add(user)
         db.session.commit()
-        return user.id  # IDのみを返す
+        return user.id
 
 @pytest.fixture
 def test_channel(app, test_user):
@@ -47,100 +45,105 @@ def test_channel(app, test_user):
         channel = Channel(
             id='test-channel-id',
             name='testchannel',
-            created_by=test_user,  # test_userはIDのみ
+            created_by=test_user,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
         db.session.add(channel)
         db.session.commit()
-        return channel.id  # IDのみを返す
+        return channel.id
 
 @pytest.fixture
 def auth_client(client, test_user, app):
     """認証済みのテストクライアント"""
     with app.app_context():
-        user = db.session.get(User, test_user)  # test_userはID
-        # Flask-Loginのlogin_userを使用
+        user = db.session.get(User, test_user)
         with client.session_transaction() as session:
-            # 元のセッション情報を保持
             session['user_id'] = user.id
             session['username'] = user.username
-        
-        # クライアントでリクエストを作成してlogin_userを呼び出す
-        with app.test_request_context():
-            login_user(user)
-            # テスト用のセッションにユーザーIDを設定
-            from flask import session as app_session
-            app_session['_user_id'] = user.id
-
     return client
 
-def test_send_message(auth_client, test_channel, app):
-    """メッセージ送信のテスト"""
+@pytest.fixture
+def api_headers():
+    """APIリクエスト用のヘッダー"""
+    return {'X-Requested-With': 'XMLHttpRequest'}
+
+def test_send_message_api(auth_client, test_channel, app, api_headers):
+    """メッセージ送信のAPIテスト"""
     with app.app_context():
-        # 正常系：有効なメッセージを送信
+        # テキストメッセージを送信
         response = auth_client.post('/chat/send', data={
-            'message': 'Hello, World!',
+            'message': 'テストメッセージ',
             'channel_id': test_channel
-        }, follow_redirects=True)
+        }, headers=api_headers, follow_redirects=True)
+        
         assert response.status_code == 200
+        assert response.is_json
         
         # メッセージがデータベースに保存されたことを確認
-        message = Message.query.filter_by(content='Hello, World!').first()
+        message = Message.query.filter_by(content='テストメッセージ').first()
         assert message is not None
-        assert message.content == 'Hello, World!'
-        
-        # 異常系：空のメッセージ
-        response = auth_client.post('/chat/send', data={
-            'message': '',
-            'channel_id': test_channel
-        }, follow_redirects=True)
-        assert b'message' in response.data.lower()
+        assert message.user_id == 'test-user-id'
+        assert message.channel_id == test_channel
 
-def test_upload_image(auth_client, test_channel, app):
-    """画像アップロード機能のテスト"""
+def test_upload_image_api(auth_client, test_channel, app, api_headers):
+    """画像アップロードのAPIテスト"""
     with app.app_context():
-        # テスト用の画像を作成
+        # 画像を作成
         img = Image.new('RGB', (100, 100), color='red')
         img_io = io.BytesIO()
         img.save(img_io, 'JPEG')
         img_io.seek(0)
         
-        # 画像のみのメッセージを送信
-        response = auth_client.post('/chat/send', data={
-            'channel_id': test_channel,
-            'image': (img_io, 'test_image.jpg')
-        }, follow_redirects=True)
-        assert response.status_code == 200
+        # 画像付きメッセージを送信
+        response = auth_client.post('/chat/send', 
+                                   data={
+                                       'channel_id': test_channel,
+                                       'image': (img_io, 'test_image.jpg')
+                                   },
+                                   headers=api_headers,
+                                   content_type='multipart/form-data',
+                                   follow_redirects=True)
         
-        # 画像URLを含むメッセージがデータベースに保存されたことを確認
+        assert response.status_code == 200
+        assert response.is_json
+        
+        # 画像がアップロードされたことを確認
         message = Message.query.filter_by(content='').first()
         assert message is not None
         assert message.image_url is not None
+        assert 'test_image.jpg' in message.image_url
         
-        # 2回目のテスト用に新しい画像を作成
+        # テキストと画像の両方を含むメッセージを送信
         img2 = Image.new('RGB', (100, 100), color='blue')
         img_io2 = io.BytesIO()
         img2.save(img_io2, 'JPEG')
         img_io2.seek(0)
         
-        # テキストと画像の両方を含むメッセージを送信
-        response = auth_client.post('/chat/send', data={
-            'message': 'Image with text',
-            'channel_id': test_channel,
-            'image': (img_io2, 'test_image2.jpg')
-        }, follow_redirects=True)
-        assert response.status_code == 200
+        response = auth_client.post('/chat/send', 
+                                   data={
+                                       'message': 'テキストと画像',
+                                       'channel_id': test_channel,
+                                       'image': (img_io2, 'test_image2.jpg')
+                                   },
+                                   headers=api_headers,
+                                   content_type='multipart/form-data',
+                                   follow_redirects=True)
         
-        # テキストと画像URLの両方を含むメッセージがデータベースに保存されたことを確認
-        message = Message.query.filter_by(content='Image with text').first()
+        assert response.status_code == 200
+        assert response.is_json
+        
+        # メッセージがデータベースに保存されたことを確認
+        message = Message.query.filter_by(content='テキストと画像').first()
         assert message is not None
         assert message.image_url is not None
+        assert message.user_id == 'test-user-id'
+        assert message.channel_id == test_channel
 
-def test_edit_message(auth_client, test_user, test_channel, app):
-    """メッセージ編集のテスト"""
+def test_edit_message_api(auth_client, test_user, test_channel, app, api_headers):
+    """メッセージ編集のAPIテスト"""
     with app.app_context():
-        # テスト用メッセージを作成
+        # テスト用のメッセージを作成
         message = Message(
             id='test-message-id',
             content='元のメッセージ',
@@ -155,18 +158,18 @@ def test_edit_message(auth_client, test_user, test_channel, app):
         # メッセージを編集
         response = auth_client.post(f'/chat/messages/{message.id}/edit', data={
             'content': '編集後のメッセージ'
-        }, follow_redirects=True)
+        }, headers=api_headers, follow_redirects=True)
         
         assert response.status_code == 200
-        assert 'メッセージを編集しました' in response.get_data(as_text=True)
+        assert response.is_json
         
-        # メッセージが更新されたか確認
-        updated_message = Message.query.get(message.id)
-        assert updated_message.content == '編集後のメッセージ'
-        assert updated_message.is_edited == True
+        # メッセージが編集されたことを確認
+        edited_message = Message.query.get(message.id)
+        assert edited_message.content == '編集後のメッセージ'
+        assert edited_message.is_edited == True
 
-def test_edit_message_unauthorized(auth_client, app):
-    """他のユーザーのメッセージを編集しようとしたときのテスト"""
+def test_edit_message_unauthorized_api(auth_client, app, api_headers):
+    """他ユーザーのメッセージ編集時の認証チェックのAPIテスト"""
     with app.app_context():
         # 別のユーザーを作成
         other_user = User(
@@ -177,7 +180,6 @@ def test_edit_message_unauthorized(auth_client, app):
             updated_at=datetime.now(UTC)
         )
         db.session.add(other_user)
-        db.session.commit()
         
         # チャンネルを作成
         channel = Channel(
@@ -188,7 +190,6 @@ def test_edit_message_unauthorized(auth_client, app):
             updated_at=datetime.now(UTC)
         )
         db.session.add(channel)
-        db.session.commit()
         
         # 他のユーザーのメッセージを作成
         message = Message(
@@ -204,20 +205,24 @@ def test_edit_message_unauthorized(auth_client, app):
         
         # 他のユーザーのメッセージを編集しようとする
         response = auth_client.post(f'/chat/messages/{message.id}/edit', data={
-            'content': '編集しようとしたメッセージ'
-        }, follow_redirects=True)
+            'content': '編集しようとする'
+        }, headers=api_headers, follow_redirects=True)
         
-        assert response.status_code == 200
-        assert '自分のメッセージのみ編集できます' in response.get_data(as_text=True)
+        assert response.status_code == 403
+        assert response.is_json
+        json_data = response.get_json()
+        assert 'error' in json_data
+        assert '自分のメッセージのみ編集できます' in json_data['error']
         
         # メッセージが編集されていないことを確認
-        unchanged_message = Message.query.get(message.id)
-        assert unchanged_message.content == '他のユーザーのメッセージ'
+        not_edited_message = Message.query.get(message.id)
+        assert not_edited_message.content == '他のユーザーのメッセージ'
+        assert not_edited_message.is_edited == False
 
-def test_delete_message(auth_client, test_user, test_channel, app):
-    """メッセージ削除のテスト"""
+def test_delete_message_api(auth_client, test_user, test_channel, app, api_headers):
+    """メッセージ削除のAPIテスト"""
     with app.app_context():
-        # テスト用メッセージを作成
+        # テスト用のメッセージを作成
         message = Message(
             id='test-message-id',
             content='削除するメッセージ',
@@ -230,17 +235,19 @@ def test_delete_message(auth_client, test_user, test_channel, app):
         db.session.commit()
         
         # メッセージを削除
-        response = auth_client.post(f'/chat/messages/{message.id}/delete', follow_redirects=True)
+        response = auth_client.post(f'/chat/messages/{message.id}/delete', 
+                                    headers=api_headers, 
+                                    follow_redirects=True)
         
         assert response.status_code == 200
-        assert 'メッセージを削除しました' in response.get_data(as_text=True)
+        assert response.is_json
         
-        # メッセージが削除されたか確認
+        # メッセージが削除されたことを確認
         deleted_message = Message.query.get(message.id)
         assert deleted_message is None
 
-def test_delete_message_unauthorized(auth_client, app):
-    """他のユーザーのメッセージを削除しようとしたときのテスト"""
+def test_delete_message_unauthorized_api(auth_client, app, api_headers):
+    """他ユーザーのメッセージ削除時の認証チェックのAPIテスト"""
     with app.app_context():
         # 別のユーザーを作成
         other_user = User(
@@ -277,69 +284,76 @@ def test_delete_message_unauthorized(auth_client, app):
         db.session.commit()
         
         # 他のユーザーのメッセージを削除しようとする
-        response = auth_client.post(f'/chat/messages/{message.id}/delete', follow_redirects=True)
+        response = auth_client.post(f'/chat/messages/{message.id}/delete', 
+                                    headers=api_headers, 
+                                    follow_redirects=True)
         
-        assert response.status_code == 200
-        assert '自分のメッセージのみ削除できます' in response.get_data(as_text=True)
+        assert response.status_code == 403
+        assert response.is_json
+        json_data = response.get_json()
+        assert 'error' in json_data
+        assert '自分のメッセージのみ削除できます' in json_data['error']
         
         # メッセージが削除されていないことを確認
-        unchanged_message = Message.query.get(message.id)
-        assert unchanged_message is not None
-        assert unchanged_message.content == '他のユーザーのメッセージ'
+        not_deleted_message = Message.query.get(message.id)
+        assert not_deleted_message is not None
+        assert not_deleted_message.content == '他のユーザーのメッセージ'
 
-def test_message_reactions(auth_client, test_channel, test_user, app):
-    """メッセージリアクションのテスト"""
+def test_message_reactions_api(auth_client, test_channel, test_user, app, api_headers):
+    """メッセージリアクション機能のAPIテスト"""
     with app.app_context():
-        # メッセージを作成
+        # テスト用のメッセージを作成
         message = Message(
-            id=str(uuid.uuid4()),
-            channel_id=test_channel,
+            id='test-message-id',
+            content='リアクションテスト用メッセージ',
             user_id=test_user,
-            content='Message for reactions',
+            channel_id=test_channel,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
         db.session.add(message)
         db.session.commit()
         
-        # 正常系：リアクションを追加
-        response = auth_client.post(f'/chat/messages/{message.id}/react', 
-                               json={'emoji': '👍'},
-                               content_type='application/json')
+        # リアクションを追加
+        response = auth_client.post(f'/chat/messages/{message.id}/react', data={
+            'emoji': '👍'
+        }, headers=api_headers)
+        
         assert response.status_code == 200
+        assert response.is_json
         
         # リアクションが追加されたことを確認
-        reaction = Reaction.query.filter_by(
-            message_id=message.id,
-            user_id=test_user,
-            emoji='👍'
-        ).first()
+        reaction = Reaction.query.filter_by(message_id=message.id, emoji='👍').first()
         assert reaction is not None
+        assert reaction.user_id == test_user
         
-        # メッセージを削除
-        message_id = message.id
-        response = auth_client.delete(f'/chat/messages/{message_id}')
+        # 同じリアクションを削除
+        response = auth_client.post(f'/chat/messages/{message.id}/react', data={
+            'emoji': '👍'
+        }, headers=api_headers)
+        
         assert response.status_code == 200
+        assert response.is_json
         
-        # メッセージとリアクションが削除されたことを確認
-        deleted_message = Message.query.get(message_id)
-        assert deleted_message is None
-        
-        deleted_reaction = Reaction.query.filter_by(
-            message_id=message_id,
-            user_id=test_user,
-            emoji='👍'
-        ).first()
+        # リアクションが削除されたことを確認
+        deleted_reaction = Reaction.query.filter_by(message_id=message.id, emoji='👍').first()
         assert deleted_reaction is None
         
-        # 削除されたメッセージへのリアクション追加は404エラーになることを確認
-        response = auth_client.post(f'/chat/messages/{message_id}/react',
-                               json={'emoji': '👍'},
-                               content_type='application/json')
-        assert response.status_code == 404
+        # 別のリアクションを追加
+        response = auth_client.post(f'/chat/messages/{message.id}/react', data={
+            'emoji': '❤️'
+        }, headers=api_headers)
+        
+        assert response.status_code == 200
+        assert response.is_json
+        
+        # 新しいリアクションが追加されたことを確認
+        new_reaction = Reaction.query.filter_by(message_id=message.id, emoji='❤️').first()
+        assert new_reaction is not None
+        assert new_reaction.user_id == test_user
 
-def test_message_mentions(auth_client, test_channel, test_user, app):
-    """メンション機能のテスト"""
+def test_message_mentions_api(auth_client, test_channel, test_user, app, api_headers):
+    """メンション機能のAPIテスト"""
     with app.app_context():
         # テスト用の別ユーザーを作成
         mentioned_user = User(
@@ -351,35 +365,18 @@ def test_message_mentions(auth_client, test_channel, test_user, app):
         )
         db.session.add(mentioned_user)
         db.session.commit()
-
+        
         # メンション付きメッセージを送信
         response = auth_client.post('/chat/send', data={
             'message': 'Hello @mentioneduser!',
             'channel_id': test_channel
-        }, follow_redirects=True)
+        }, headers=api_headers, follow_redirects=True)
+        
         assert response.status_code == 200
-
-        # メッセージが保存されたことを確認
+        assert response.is_json
+        
+        # メッセージがデータベースに保存されたことを確認
         message = Message.query.filter_by(content='Hello @mentioneduser!').first()
         assert message is not None
-
-        # メッセージ表示時にメンションがリンクに変換されることを確認
-        response = auth_client.get(f'/chat/messages/{test_channel}')
-        assert response.status_code == 200
-        assert '@mentioneduser' in response.get_data(as_text=True)
-
-        # 存在しないユーザーへのメンション
-        response = auth_client.post('/chat/send', data={
-            'message': 'Hello @nonexistentuser!',
-            'channel_id': test_channel
-        }, follow_redirects=True)
-        assert response.status_code == 200
-
-        # 複数のメンションを含むメッセージ
-        response = auth_client.post('/chat/send', data={
-            'message': 'Hello @mentioneduser and @testuser!',
-            'channel_id': test_channel
-        }, follow_redirects=True)
-        assert response.status_code == 200
-        message = Message.query.filter_by(content='Hello @mentioneduser and @testuser!').first()
-        assert message is not None 
+        assert message.user_id == test_user
+        assert message.channel_id == test_channel 

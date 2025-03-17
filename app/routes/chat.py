@@ -114,6 +114,22 @@ def messages(channel_id=None):
     # チャンネルIDが指定されていない場合はデフォルトチャンネルを使用
     if channel_id is None:
         default_channel = get_or_create_default_channel()
+        # AJAXリクエストの場合はリダイレクトせずにJSONでチャンネル一覧を返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            channels_data = [{
+                'id': ch.id,
+                'name': ch.name,
+                'created_by': ch.created_by,
+                'created_at': ch.created_at.isoformat() if ch.created_at else None,
+                'updated_at': ch.updated_at.isoformat() if ch.updated_at else None
+            } for ch in channels]
+            
+            return jsonify({
+                'status': 'success',
+                'channels': channels_data,
+                'default_channel_id': default_channel.id
+            })
+        
         return redirect(url_for('chat.messages', channel_id=default_channel.id))
     
     # 現在のチャンネルを取得
@@ -133,6 +149,32 @@ def messages(channel_id=None):
     ).distinct().all()
     
     users_data = [{'id': user.id, 'username': user.username} for user in channel_users]
+    
+    # AJAXリクエストの場合はJSONレスポンスを返す
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        channels_data = [{
+            'id': ch.id,
+            'name': ch.name,
+            'created_by': ch.created_by,
+            'created_at': ch.created_at.isoformat() if ch.created_at else None,
+            'updated_at': ch.updated_at.isoformat() if ch.updated_at else None
+        } for ch in channels]
+        
+        messages_data = [format_message(msg) for msg in messages]
+        
+        return jsonify({
+            'status': 'success',
+            'current_channel': {
+                'id': current_channel.id,
+                'name': current_channel.name,
+                'created_by': current_channel.created_by,
+                'created_at': current_channel.created_at.isoformat() if current_channel.created_at else None,
+                'updated_at': current_channel.updated_at.isoformat() if current_channel.updated_at else None
+            },
+            'channels': channels_data,
+            'messages': messages_data,
+            'users': users_data
+        })
     
     return render_template('chat/messages.html', 
                          messages=messages, 
@@ -313,32 +355,43 @@ def send_message():
 def edit_message(message_id):
     """メッセージを編集する"""
     content = request.form.get('content', '').strip()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     if request.method == 'GET':
         # GET リクエストの場合、編集フォームを表示
         message = Message.query.get(message_id)
         if not message:
+            if is_ajax:
+                return jsonify({'error': 'メッセージが見つかりません'}), 404
             flash('メッセージが見つかりません', 'error')
             return redirect(url_for('chat.messages'))
         
         if message.user_id != session['user_id']:
+            if is_ajax:
+                return jsonify({'error': '自分のメッセージのみ編集できます'}), 403
             flash('自分のメッセージのみ編集できます', 'error')
             return redirect(url_for('chat.messages'))
             
         # メッセージの編集ページを返す（必要に応じて実装）
         return redirect(url_for('chat.messages', channel_id=message.channel_id))
     
-    # POSTリクエストの処理（既存のコード）
+    # POSTリクエストの処理
     if not content:
+        if is_ajax:
+            return jsonify({'error': 'メッセージを入力してください'}), 400
         flash('メッセージを入力してください', 'error')
         return redirect(url_for('chat.messages'))
     
     message = Message.query.get(message_id)
     if not message:
+        if is_ajax:
+            return jsonify({'error': 'メッセージが見つかりません'}), 404
         flash('メッセージが見つかりません', 'error')
         return redirect(url_for('chat.messages'))
     
     if message.user_id != session['user_id']:
+        if is_ajax:
+            return jsonify({'error': '自分のメッセージのみ編集できます'}), 403
         flash('自分のメッセージのみ編集できます', 'error')
         return redirect(url_for('chat.messages'))
     
@@ -358,7 +411,17 @@ def edit_message(message_id):
             'is_edited': message.is_edited
         }, room=message.channel_id)
         
+        if is_ajax:
+            return jsonify({
+                'success': True,
+                'message': 'メッセージを編集しました',
+                'content': message.content,
+                'is_edited': message.is_edited
+            })
         flash('メッセージを編集しました', 'success')
+    else:
+        if is_ajax:
+            return jsonify({'success': True, 'message': '変更はありませんでした'})
     
     return redirect(url_for('chat.messages', channel_id=message.channel_id))
 
@@ -366,14 +429,20 @@ def edit_message(message_id):
 @login_required
 def delete_message(message_id):
     """メッセージを削除する"""
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     try:
         message = Message.query.get(message_id)
         
         if not message:
+            if is_ajax:
+                return jsonify({'error': 'メッセージが見つかりません'}), 404
             flash('メッセージが見つかりません', 'error')
             return redirect(url_for('chat.messages'))
         
         if message.user_id != session['user_id']:
+            if is_ajax:
+                return jsonify({'error': '自分のメッセージのみ削除できます'}), 403
             flash('自分のメッセージのみ削除できます', 'error')
             return redirect(url_for('chat.messages'))
         
@@ -393,12 +462,19 @@ def delete_message(message_id):
             'message_id': message_id
         }, room=channel_id)
         
+        if is_ajax:
+            return jsonify({'success': True, 'message': 'メッセージを削除しました'})
+        
         flash('メッセージを削除しました', 'success')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     except Exception as e:
         print(f"メッセージ削除エラー: {str(e)}")
         import traceback
         traceback.print_exc()
+        
+        if is_ajax:
+            return jsonify({'error': 'メッセージの削除中にエラーが発生しました'}), 500
+            
         flash('メッセージの削除中にエラーが発生しました', 'error')
         return redirect(url_for('chat.messages'))
 
@@ -430,7 +506,13 @@ def delete_message_api(message_id):
 @bp.route('/messages/<string:message_id>/react', methods=['POST'])
 @login_required
 def toggle_reaction(message_id):
-    emoji = request.json.get('emoji')
+    # JSONとフォームデータの両方からemojiを取得
+    emoji = None
+    if request.is_json:
+        emoji = request.json.get('emoji')
+    else:
+        emoji = request.form.get('emoji')
+    
     if not emoji:
         return jsonify({'error': 'Emoji is required'}), 400
     
@@ -476,6 +558,9 @@ def create_channel():
     # 入力チェック
     if not name:
         print("エラー: チャンネル名が空です")
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'チャンネル名は必須です'}), 400
         flash('チャンネル名は必須です')
         return redirect(url_for('chat.messages'))
     
@@ -483,6 +568,9 @@ def create_channel():
     existing_channel = Channel.query.filter_by(name=name).first()
     if existing_channel:
         print(f"エラー: 同名のチャンネルが存在します: {name}")
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': '同じ名前のチャンネルが既に存在します'}), 400
         flash('同じ名前のチャンネルが既に存在します')
         return redirect(url_for('chat.messages'))
     
@@ -496,11 +584,28 @@ def create_channel():
         db.session.add(channel)
         db.session.commit()
         print(f"チャンネル作成成功: id={channel.id}, name={channel.name}")
+        
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'message': 'チャンネルを作成しました',
+                'channel': {
+                    'id': channel.id,
+                    'name': channel.name
+                }
+            }), 200
+            
         flash('チャンネルを作成しました')
         return redirect(url_for('chat.messages', channel_id=channel.id))
     except Exception as e:
         db.session.rollback()
         print(f"エラー: チャンネル作成に失敗: {str(e)}")
+        
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'チャンネルの作成に失敗しました'}), 500
+            
         flash('チャンネルの作成に失敗しました')
         return redirect(url_for('chat.messages'))
 
@@ -512,12 +617,18 @@ def delete_channel(channel_id):
     
     # 自分が作成者かどうかチェック
     if channel.created_by != session.get('user_id'):
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': '自分が作成したチャンネルのみ削除できます'}), 403
         flash('自分が作成したチャンネルのみ削除できます', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
     # デフォルトチャンネルは削除できないようにする
     default_channel = get_or_create_default_channel()
     if channel.id == default_channel.id:
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'デフォルトチャンネルは削除できません'}), 400
         flash('デフォルトチャンネルは削除できません', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
@@ -529,10 +640,23 @@ def delete_channel(channel_id):
         db.session.delete(channel)
         db.session.commit()
         
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'message': 'チャンネルを削除しました',
+                'redirect_to': url_for('chat.messages', channel_id=default_channel.id)
+            }), 200
+            
         flash('チャンネルを削除しました', 'success')
         return redirect(url_for('chat.messages', channel_id=default_channel.id))
     except Exception as e:
         db.session.rollback()
+        
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'チャンネルの削除に失敗しました'}), 500
+            
         flash('チャンネルの削除に失敗しました', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
 
@@ -544,24 +668,36 @@ def edit_channel(channel_id):
     
     # 自分が作成者かどうかチェック
     if channel.created_by != session.get('user_id'):
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': '自分が作成したチャンネルのみ編集できます'}), 403
         flash('自分が作成したチャンネルのみ編集できます', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
     # デフォルトチャンネルは編集できないようにする
     default_channel = get_or_create_default_channel()
     if channel.id == default_channel.id:
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'デフォルトチャンネルは編集できません'}), 400
         flash('デフォルトチャンネルは編集できません', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
     # 新しいチャンネル名を取得
     new_name = request.form.get('name')
     if not new_name:
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'チャンネル名は必須です'}), 400
         flash('チャンネル名は必須です', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
     # 同名チャンネルのチェック（自分自身は除く）
     existing_channel = Channel.query.filter(Channel.name == new_name, Channel.id != channel_id).first()
     if existing_channel:
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': '同じ名前のチャンネルが既に存在します'}), 400
         flash('同じ名前のチャンネルが既に存在します', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
     
@@ -572,10 +708,39 @@ def edit_channel(channel_id):
             channel.name = new_name
             channel.updated_at = datetime.now(UTC)
             db.session.commit()
+            
+            # AJAXリクエストの場合はJSONレスポンスを返す
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': True,
+                    'message': 'チャンネル名を更新しました',
+                    'channel': {
+                        'id': channel.id,
+                        'name': new_name
+                    }
+                }), 200
+                
             flash('チャンネル名を更新しました', 'success')
+        else:
+            # 変更がない場合もJSONレスポンスを返す
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': True,
+                    'message': '変更はありません',
+                    'channel': {
+                        'id': channel.id,
+                        'name': channel.name
+                    }
+                }), 200
+                
         return redirect(url_for('chat.messages', channel_id=channel_id))
     except Exception as e:
         db.session.rollback()
+        
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'チャンネル名の更新に失敗しました'}), 500
+            
         flash('チャンネル名の更新に失敗しました', 'error')
         return redirect(url_for('chat.messages', channel_id=channel_id))
 

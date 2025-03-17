@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, join_room, leave_room
@@ -131,15 +131,21 @@ def create_app(config_class=Config):
     # エラーハンドラーの登録
     @app.errorhandler(404)
     def not_found_error(error):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'ページが見つかりません'}), 404
         return render_template('errors/404.html'), 404
 
     @app.errorhandler(403)
     def forbidden_error(error):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'アクセス権限がありません'}), 403
         return render_template('errors/403.html'), 403
 
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'サーバーエラーが発生しました'}), 500
         return render_template('errors/500.html'), 500
 
     return app 

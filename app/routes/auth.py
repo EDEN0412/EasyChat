@@ -14,11 +14,17 @@ def register():
         print(f"登録リクエスト: username={username}")
         
         if not username or not password:
-            flash('ユーザー名とパスワードは必須です', 'error')
+            error_msg = 'ユーザー名とパスワードは必須です'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'error')
             return render_template('auth/register.html')
         
         if password != password_confirm:
-            flash('パスワードが一致しません', 'error')
+            error_msg = 'パスワードが一致しません'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'error')
             return render_template('auth/register.html')
         
         try:
@@ -28,15 +34,24 @@ def register():
             if user:
                 # 作成成功したら直接ログインしてチャットページへ
                 login_user(user)
-                flash('アカウントが作成されました', 'success')
+                success_msg = 'アカウントが作成されました'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': success_msg, 'user_id': user.id}), 200
+                flash(success_msg, 'success')
                 return redirect(url_for('chat.messages'))
             else:
-                flash('ユーザーの作成に失敗しました。もう一度お試しください', 'error')
+                error_msg = 'ユーザーの作成に失敗しました。もう一度お試しください'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'error': error_msg}), 500
+                flash(error_msg, 'error')
                 return render_template('auth/register.html')
         except Exception as e:
             print(f"登録処理中にエラーが発生しました: {str(e)}")
             print(traceback.format_exc())
-            flash(str(e), 'error')
+            error_msg = str(e)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 500
+            flash(error_msg, 'error')
             return render_template('auth/register.html')
     
     return render_template('auth/register.html')
@@ -50,25 +65,35 @@ def login():
         print(f"ログイン試行: username={username}")
         
         if not username or not password:
-            flash('ユーザー名とパスワードは必須です', 'error')
+            error_msg = 'ユーザー名とパスワードは必須です'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'error')
             return render_template('auth/login.html')
         
         user = authenticate_user(username, password)
+        
         if user:
             login_user(user)
-            print(f"ログイン成功: user_id={user.id}")
-            flash('ログインしました', 'success')
+            success_msg = 'ログインしました'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': success_msg, 'user_id': user.id}), 200
+            flash(success_msg, 'success')
             return redirect(url_for('chat.messages'))
         else:
-            flash('ユーザー名またはパスワードが正しくありません', 'error')
+            error_msg = 'ユーザー名またはパスワードが無効です'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': error_msg}), 401
+            flash(error_msg, 'error')
             return render_template('auth/login.html')
     
     return render_template('auth/login.html')
 
 @bp.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    session.pop('username', None)
     logout_user()
-    flash('ログアウトしました', 'success')
-    return redirect(url_for('main.index')) 
+    success_msg = 'ログアウトしました'
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': success_msg}), 200
+    flash(success_msg, 'success')
+    return redirect(url_for('auth.login')) 
