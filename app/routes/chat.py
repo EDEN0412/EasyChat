@@ -793,4 +793,36 @@ def search_messages():
             'is_edited': message.is_edited
         })
     
-    return jsonify({'messages': result}) 
+    return jsonify({'messages': result})
+
+@bp.route('/channels/search')
+@login_required
+def search_channels():
+    """チャンネルを検索する"""
+    keyword = request.args.get('keyword', '')
+    
+    if not keyword:
+        # キーワードがない場合は全てのチャンネルを返す
+        channels = Channel.query.all()
+    else:
+        # キーワードを含むチャンネルを検索
+        channels = Channel.query.filter(
+            Channel.name.ilike(f'%{keyword}%')
+        ).all()
+    
+    # 検索結果をフォーマット
+    result = []
+    for channel in channels:
+        # チャンネルの作成日時をJSTに変換
+        created_at_jst = channel.created_at.replace(tzinfo=UTC).astimezone(JST)
+        updated_at_jst = channel.updated_at.replace(tzinfo=UTC).astimezone(JST)
+        
+        result.append({
+            'id': channel.id,
+            'name': channel.name,
+            'created_by': channel.created_by,
+            'created_at': created_at_jst.strftime('%Y年%m月%d日 %H:%M'),
+            'updated_at': updated_at_jst.strftime('%Y年%m月%d日 %H:%M')
+        })
+    
+    return jsonify({'channels': result}) 

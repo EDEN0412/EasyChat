@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from flask_login import UserMixin
 from app import db
 
@@ -11,8 +11,8 @@ class User(db.Model, UserMixin):
     status_message = db.Column(db.String(255), nullable=True)
     avatar_bg_color = db.Column(db.String(20), nullable=True, default='#1d9bf0')  # デフォルトの背景色
     avatar_text_color = db.Column(db.String(20), nullable=True, default='#ffffff')  # デフォルトのテキスト色
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # リレーションシップ
     messages = db.relationship('Message', backref='author', lazy='dynamic')
