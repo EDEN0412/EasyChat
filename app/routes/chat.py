@@ -506,72 +506,70 @@ def delete_message_api(message_id):
     
     return jsonify({'message': 'Message deleted successfully'})
 
-@bp.route('/messages/<string:message_id>/react', methods=['POST'])
+@bp.route('/messages/<message_id>/reaction', methods=['POST'])
 @login_required
 def toggle_reaction(message_id):
+    """絵文字リアクションを切り替え"""
     try:
-        # JSONとフォームデータの両方からemojiを取得
-        emoji = None
-        if request.is_json:
-            emoji = request.json.get('emoji')
-        else:
-            emoji = request.form.get('emoji')
+        emoji = request.form.get('emoji', '')
         
         if not emoji:
-            return jsonify({'error': 'Emoji is required'}), 400
+            return jsonify({'status': 'error', 'message': '絵文字が指定されていません'}), 400
         
-        # メッセージの存在確認
-        message = Message.query.get_or_404(message_id)
+        # メッセージが存在するか確認
+        message = Message.query.get(message_id)
+        if not message:
+            # メッセージが見つからない場合は404エラーを返す
+            return jsonify({'status': 'error', 'message': 'メッセージが見つかりません'}), 404
         
-        # 同じメッセージに対する現在のユーザーの全てのリアクションを取得
-        all_user_reactions = Reaction.query.filter_by(
+        # 既存のリアクションを確認
+        existing_reaction = Reaction.query.filter_by(
             message_id=message_id,
             user_id=session['user_id']
-        ).all()
+        ).first()
         
-        # 既存の同じリアクションを確認
-        existing_same_reaction = None
-        for reaction in all_user_reactions:
-            if reaction.emoji == emoji:
-                existing_same_reaction = reaction
-                break
+        # 既存のリアクションがあり、同じ絵文字の場合は削除
+        if existing_reaction and existing_reaction.emoji == emoji:
+            db.session.delete(existing_reaction)
+            db.session.commit()
+            
+            # 現在のリアクション数を集計して返す
+            reactions = format_reactions(message)
+            return jsonify({
+                'status': 'success',
+                'message': 'リアクションを削除しました',
+                'reactions': reactions
+            })
         
-        # トランザクション開始
-        try:
-            # 同じ絵文字のリアクションがある場合は削除
-            if existing_same_reaction:
-                db.session.delete(existing_same_reaction)
-                db.session.commit()
-            else:
-                # 他のリアクションをすべて削除
-                for reaction in all_user_reactions:
-                    db.session.delete(reaction)
-                db.session.commit()
-                
-                # 新しいリアクションを追加
-                new_reaction = Reaction(
-                    message_id=message_id,
-                    user_id=session['user_id'],
-                    emoji=emoji
-                )
-                db.session.add(new_reaction)
-                db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"リアクション処理エラー: {str(e)}")
-            return jsonify({'error': 'リアクション処理中にエラーが発生しました'}), 500
+        # 既存のリアクションがあり、異なる絵文字の場合は更新
+        if existing_reaction:
+            existing_reaction.emoji = emoji
+            existing_reaction.created_at = datetime.now(UTC)
+        else:
+            # 新しいリアクションを追加
+            new_reaction = Reaction(
+                message_id=message_id,
+                user_id=session['user_id'],
+                emoji=emoji,
+                created_at=datetime.now(UTC)
+            )
+            db.session.add(new_reaction)
         
-        # リアクションの更新をブロードキャスト
-        message_data = format_message(message)
-        socketio.emit('update_reactions', {
-            'message_id': message_id,
-            'reactions': message_data['reactions']
+        db.session.commit()
+        
+        # 現在のリアクション数を集計して返す
+        reactions = format_reactions(message)
+        return jsonify({
+            'status': 'success',
+            'message': 'リアクションを追加しました',
+            'reactions': reactions
         })
-        
-        return jsonify(message_data)
+    
     except Exception as e:
-        current_app.logger.error(f"リアクション全体エラー: {str(e)}")
-        return jsonify({'error': 'リアクション処理中にエラーが発生しました'}), 500
+        db.session.rollback()
+        print(f"エラー: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'status': 'error', 'message': 'リアクションの処理中にエラーが発生しました'}), 500
 
 @bp.route('/channels/create', methods=['POST'])
 @login_required

@@ -315,7 +315,7 @@ def test_message_reactions_api(auth_client, test_channel, test_user, app, api_he
         db.session.commit()
         
         # リアクションを追加
-        response = auth_client.post(f'/chat/messages/{message.id}/react', data={
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction', data={
             'emoji': '👍'
         }, headers=api_headers)
         
@@ -328,7 +328,7 @@ def test_message_reactions_api(auth_client, test_channel, test_user, app, api_he
         assert reaction.user_id == test_user
         
         # 同じリアクションを削除
-        response = auth_client.post(f'/chat/messages/{message.id}/react', data={
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction', data={
             'emoji': '👍'
         }, headers=api_headers)
         
@@ -340,7 +340,7 @@ def test_message_reactions_api(auth_client, test_channel, test_user, app, api_he
         assert deleted_reaction is None
         
         # 別のリアクションを追加
-        response = auth_client.post(f'/chat/messages/{message.id}/react', data={
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction', data={
             'emoji': '❤️'
         }, headers=api_headers)
         

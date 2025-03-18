@@ -74,4 +74,35 @@ def setup_test_transaction():
         yield
     finally:
         db.session.rollback()
-        db.session.remove() 
+        db.session.remove()
+
+@pytest.fixture
+def auth_client(client, app):
+    """認証済みのテストクライアント"""
+    from flask_login import login_user
+    from app.models.user import User
+    
+    # テスト用ユーザーを作成
+    with app.app_context():
+        # まず既存のユーザーを確認
+        user = User.query.filter_by(username='testuser').first()
+        if not user:
+            # ユーザーが存在しない場合は作成
+            user = User(
+                id='test-user-id',
+                username='testuser',
+                password_hash='dummy_hash'
+            )
+            db.session.add(user)
+            db.session.commit()
+        
+        # ユーザーをログイン状態にする
+        with client.session_transaction() as session:
+            session['user_id'] = user.id
+            
+        # Flask-Loginでログイン
+        with app.test_request_context():
+            login_user(user)
+            client.get('/')  # セッションを確立するための呼び出し
+            
+    return client 

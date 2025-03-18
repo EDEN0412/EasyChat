@@ -1087,7 +1087,11 @@
                 </button>
                 <button class="account-button-mobile" title="アカウント設定">
                     <span class="avatar-icon avatar-text" style="background-color: {{ current_user.avatar_bg_color or '#1d9bf0' }}; color: {{ current_user.avatar_text_color or '#ffffff' }};">
+                        {% if current_user.is_authenticated %}
                         {{ current_user.username[0] | upper }}
+                        {% else %}
+                        G
+                        {% endif %}
                     </span>
                 </button>
             </div>
@@ -1096,7 +1100,11 @@
         <div class="account-menu-container">
             <button class="account-button" title="アカウント設定">
                 <span class="avatar-icon avatar-text" style="background-color: {{ current_user.avatar_bg_color or '#1d9bf0' }}; color: {{ current_user.avatar_text_color or '#ffffff' }};">
+                    {% if current_user.is_authenticated %}
                     {{ current_user.username[0] | upper }}
+                    {% else %}
+                    G
+                    {% endif %}
                 </span>
             </button>
             <div class="account-menu" id="account-menu">
@@ -1694,12 +1702,13 @@ async function toggleReaction(messageId, emoji) {
             return;
         }
         
-        const response = await fetch(`/chat/messages/${messageId}/react`, {
+        // FormDataを使ってフォームデータとして送信
+        const formData = new FormData();
+        formData.append('emoji', emoji);
+        
+        const response = await fetch(`/chat/messages/${messageId}/reaction`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ emoji: emoji })
+            body: formData
         });
         
         if (!response.ok) {
@@ -1709,6 +1718,14 @@ async function toggleReaction(messageId, emoji) {
         
         const responseData = await response.json();
         console.log('リアクション処理成功:', responseData);
+        
+        // レスポンスデータにリアクション情報が含まれる場合、UIを更新
+        if (responseData.reactions) {
+            const reactionsContainer = document.getElementById(`reactions-${messageId}`);
+            if (reactionsContainer) {
+                updateReactions(reactionsContainer, responseData.reactions);
+            }
+        }
     } catch (error) {
         console.error('リアクションエラー:', error);
     }

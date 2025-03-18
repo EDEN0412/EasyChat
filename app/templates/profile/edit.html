@@ -20,7 +20,11 @@
                                      style="width: 120px; height: 120px; border: 1px solid var(--border-color); 
                                             background-color: {{ current_user.avatar_bg_color or '#1d9bf0' }};">
                                     <span style="font-size: 2.5rem; color: {{ current_user.avatar_text_color or '#ffffff' }};">
+                                        {% if current_user.is_authenticated %}
                                         {{ current_user.username[0] | upper }}
+                                        {% else %}
+                                        G
+                                        {% endif %}
                                     </span>
                                 </div>
                             </div>
@@ -86,7 +90,11 @@
         const bgColorSelect = document.getElementById('avatar_bg_color');
         const textColorSelect = document.getElementById('avatar_text_color');
         const previewContainer = document.getElementById('avatar-preview');
+        {% if current_user.is_authenticated %}
         const username = "{{ current_user.username }}";
+        {% else %}
+        const username = "Guest";
+        {% endif %}
         
         // 色選択が変更されたときのプレビュー更新
         function updatePreview() {

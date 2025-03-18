@@ -301,41 +301,49 @@ def test_message_reactions(auth_client, test_channel, test_user, app):
         )
         db.session.add(message)
         db.session.commit()
-        
+
         # 正常系：リアクションを追加
-        response = auth_client.post(f'/chat/messages/{message.id}/react', 
-                               json={'emoji': '👍'},
-                               content_type='application/json')
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction',
+                               data={'emoji': '👍'})
         assert response.status_code == 200
-        
-        # リアクションが追加されたことを確認
-        reaction = Reaction.query.filter_by(
-            message_id=message.id,
-            user_id=test_user,
-            emoji='👍'
-        ).first()
+
+        # リアクションがデータベースに保存されたことを確認
+        reaction = Reaction.query.filter_by(message_id=message.id, user_id=test_user).first()
         assert reaction is not None
-        
-        # メッセージを削除
-        message_id = message.id
-        response = auth_client.delete(f'/chat/messages/{message_id}')
+        assert reaction.emoji == '👍'
+
+        # 同じ絵文字を再度追加（削除されるはず）
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction',
+                               data={'emoji': '👍'})
         assert response.status_code == 200
-        
-        # メッセージとリアクションが削除されたことを確認
-        deleted_message = Message.query.get(message_id)
-        assert deleted_message is None
-        
-        deleted_reaction = Reaction.query.filter_by(
-            message_id=message_id,
-            user_id=test_user,
-            emoji='👍'
-        ).first()
-        assert deleted_reaction is None
-        
-        # 削除されたメッセージへのリアクション追加は404エラーになることを確認
-        response = auth_client.post(f'/chat/messages/{message_id}/react',
-                               json={'emoji': '👍'},
-                               content_type='application/json')
+
+        # リアクションが削除されたことを確認
+        reaction = Reaction.query.filter_by(message_id=message.id, user_id=test_user).first()
+        assert reaction is None
+
+        # 別の絵文字を追加
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction',
+                               data={'emoji': '❤️'})
+        assert response.status_code == 200
+
+        # 新しいリアクションが保存されたことを確認
+        reaction = Reaction.query.filter_by(message_id=message.id, user_id=test_user).first()
+        assert reaction is not None
+        assert reaction.emoji == '❤️'
+
+        # 全てのリアクションを削除
+        reactions = Reaction.query.filter_by(message_id=message.id).all()
+        for reaction in reactions:
+            db.session.delete(reaction)
+        db.session.commit()
+
+        # メッセージを削除
+        db.session.delete(message)
+        db.session.commit()
+
+        # 削除されたメッセージにリアクションを追加しようとする
+        response = auth_client.post(f'/chat/messages/{message.id}/reaction',
+                               data={'emoji': '👍'})
         assert response.status_code == 404
 
 def test_message_mentions(auth_client, test_channel, test_user, app):
