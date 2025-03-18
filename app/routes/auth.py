@@ -96,4 +96,4 @@ def logout():
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': success_msg}), 200
     flash(success_msg, 'success')
-    return redirect(url_for('auth.login')) 
+    return redirect(url_for('main.index')) 

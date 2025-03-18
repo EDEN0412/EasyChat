@@ -107,7 +107,7 @@ def test_logout(client, test_user):
     # ログアウト
     response = client.get('/logout', follow_redirects=True)
     assert response.status_code == 200
-    assert b'login' in response.data.lower()
+    assert b'EasyChat' in response.data.lower()  # トップページの内容を確認
 
     # ログアウト後の保護されたページへのアクセス
     response = client.get('/chat/messages', follow_redirects=True)
