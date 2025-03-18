@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort, current_app, send_from_directory
 from app.models import Message, Channel, User, Reaction
 from app import db, socketio
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from sqlalchemy import func
 import uuid
 from functools import wraps
@@ -11,6 +11,9 @@ import os
 import tempfile
 from werkzeug.utils import secure_filename
 import traceback
+from zoneinfo import ZoneInfo
+from dateutil.relativedelta import relativedelta
+from PIL import Image
 
 bp = Blueprint('chat', __name__, url_prefix='/chat')
 
@@ -506,48 +509,69 @@ def delete_message_api(message_id):
 @bp.route('/messages/<string:message_id>/react', methods=['POST'])
 @login_required
 def toggle_reaction(message_id):
-    # JSONとフォームデータの両方からemojiを取得
-    emoji = None
-    if request.is_json:
-        emoji = request.json.get('emoji')
-    else:
-        emoji = request.form.get('emoji')
-    
-    if not emoji:
-        return jsonify({'error': 'Emoji is required'}), 400
-    
-    # メッセージの存在確認
-    message = Message.query.get_or_404(message_id)
-    
-    # 既存のリアクションを確認
-    existing_reaction = Reaction.query.filter_by(
-        message_id=message_id,
-        user_id=session['user_id'],
-        emoji=emoji
-    ).first()
-    
-    if existing_reaction:
-        # リアクションを削除
-        db.session.delete(existing_reaction)
-    else:
-        # リアクションを追加
-        reaction = Reaction(
+    try:
+        # JSONとフォームデータの両方からemojiを取得
+        emoji = None
+        if request.is_json:
+            emoji = request.json.get('emoji')
+        else:
+            emoji = request.form.get('emoji')
+        
+        if not emoji:
+            return jsonify({'error': 'Emoji is required'}), 400
+        
+        # メッセージの存在確認
+        message = Message.query.get_or_404(message_id)
+        
+        # 同じメッセージに対する現在のユーザーの全てのリアクションを取得
+        all_user_reactions = Reaction.query.filter_by(
             message_id=message_id,
-            user_id=session['user_id'],
-            emoji=emoji
-        )
-        db.session.add(reaction)
-    
-    db.session.commit()
-    
-    # リアクションの更新をブロードキャスト
-    message_data = format_message(message)
-    socketio.emit('update_reactions', {
-        'message_id': message_id,
-        'reactions': message_data['reactions']
-    })
-    
-    return jsonify(message_data)
+            user_id=session['user_id']
+        ).all()
+        
+        # 既存の同じリアクションを確認
+        existing_same_reaction = None
+        for reaction in all_user_reactions:
+            if reaction.emoji == emoji:
+                existing_same_reaction = reaction
+                break
+        
+        # トランザクション開始
+        try:
+            # 同じ絵文字のリアクションがある場合は削除
+            if existing_same_reaction:
+                db.session.delete(existing_same_reaction)
+                db.session.commit()
+            else:
+                # 他のリアクションをすべて削除
+                for reaction in all_user_reactions:
+                    db.session.delete(reaction)
+                db.session.commit()
+                
+                # 新しいリアクションを追加
+                new_reaction = Reaction(
+                    message_id=message_id,
+                    user_id=session['user_id'],
+                    emoji=emoji
+                )
+                db.session.add(new_reaction)
+                db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"リアクション処理エラー: {str(e)}")
+            return jsonify({'error': 'リアクション処理中にエラーが発生しました'}), 500
+        
+        # リアクションの更新をブロードキャスト
+        message_data = format_message(message)
+        socketio.emit('update_reactions', {
+            'message_id': message_id,
+            'reactions': message_data['reactions']
+        })
+        
+        return jsonify(message_data)
+    except Exception as e:
+        current_app.logger.error(f"リアクション全体エラー: {str(e)}")
+        return jsonify({'error': 'リアクション処理中にエラーが発生しました'}), 500
 
 @bp.route('/channels/create', methods=['POST'])
 @login_required

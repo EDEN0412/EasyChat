@@ -2425,5 +2425,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// リアクション処理関数
+function handleReaction(messageId, userId, emoji) {
+  // 現在のリアクションを取得
+  const existingReaction = getExistingReaction(messageId, userId);
+  
+  // 同じ絵文字をクリックした場合は削除
+  if (existingReaction === emoji) {
+    deleteReaction(messageId, userId, emoji);
+    return;
+  }
+  
+  // 異なる絵文字の場合は古いリアクションを削除
+  if (existingReaction) {
+    deleteReaction(messageId, userId, existingReaction); // ここが重要！正しい絵文字を削除
+  }
+  
+  // 新しいリアクションを追加
+  addReaction(messageId, userId, emoji);
+}
 </script>
 {% endblock %}
