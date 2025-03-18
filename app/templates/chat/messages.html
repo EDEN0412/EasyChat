@@ -1687,6 +1687,13 @@ socket.on('update_reactions', function(data) {
 // リアクションの追加/削除
 async function toggleReaction(messageId, emoji) {
     try {
+        console.log(`リアクション処理: メッセージID=${messageId}, 絵文字=${emoji}`);
+        
+        if (!messageId || messageId.includes('undefined')) {
+            console.error('無効なメッセージID:', messageId);
+            return;
+        }
+        
         const response = await fetch(`/chat/messages/${messageId}/react`, {
             method: 'POST',
             headers: {
@@ -1696,15 +1703,23 @@ async function toggleReaction(messageId, emoji) {
         });
         
         if (!response.ok) {
-            throw new Error('リアクションの更新に失敗しました');
+            const errorData = await response.json().catch(() => ({ error: 'レスポンスの解析に失敗しました' }));
+            throw new Error(`リアクションの更新に失敗しました: ${response.status} ${errorData.error || ''}`);
         }
+        
+        const responseData = await response.json();
+        console.log('リアクション処理成功:', responseData);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('リアクションエラー:', error);
     }
 }
 
 // リアクション表示の更新
 function updateReactions(container, reactions) {
+    // コンテナからメッセージIDを抽出（例: "reactions-abc123" → "abc123"）
+    // UUIDには'-'が含まれるため、最初のハイフンの後のすべての文字を取得
+    const messageId = container.id.replace('reactions-', '');
+    
     // リアクションピッカー以外をクリア
     const reactionPicker = container.querySelector('.reaction-picker');
     container.innerHTML = '';
@@ -1715,7 +1730,8 @@ function updateReactions(container, reactions) {
         span.className = 'reaction';
         span.setAttribute('data-emoji', reaction.emoji);
         span.setAttribute('data-count', reaction.count);
-        span.onclick = () => toggleReaction(container.id.split('-')[1], reaction.emoji);
+        span.setAttribute('data-message-id', messageId); // メッセージIDをdata属性として保存
+        span.onclick = () => toggleReaction(messageId, reaction.emoji);
         span.textContent = `${reaction.emoji} ${reaction.count}`;
         container.appendChild(span);
     });
