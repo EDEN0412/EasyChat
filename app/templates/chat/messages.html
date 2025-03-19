@@ -20,11 +20,11 @@
                     // 最初のメッセージ要素があれば、その要素まで表示位置を調整
                     const firstMessage = messagesArea.querySelector('.message');
                     if (firstMessage) {
-                        // 少し余裕を持たせて表示
-                        messagesArea.scrollTop = firstMessage.offsetTop - 70;
+                        // 少し余裕を持たせて表示（ヘッダーの高さ+α）
+                        messagesArea.scrollTop = Math.max(0, firstMessage.offsetTop - 80);
                     }
                 }
-            }, 100);
+            }, 150); // 遅延を少し長めに設定
         }
         
         // 初期表示時に実行
@@ -32,6 +32,13 @@
         
         // ウィンドウサイズ変更時にも実行
         window.addEventListener('resize', adjustInitialScroll);
+        
+        // メッセージ送信後や遷移後にも実行
+        messagesArea.addEventListener('DOMNodeInserted', function(e) {
+            if (e.target.classList && e.target.classList.contains('message')) {
+                adjustInitialScroll();
+            }
+        });
     });
 </script>
 <style>
@@ -241,7 +248,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 10;
+    z-index: 100; /* より高い優先度 */
 }
 
 .channel-header h2 {
@@ -360,8 +367,8 @@
     
     /* メッセージエリアの調整 */
     .messages-area {
-        padding-bottom: 70px !important;
-        padding-top: 60px !important;
+        padding-bottom: 90px !important; /* 入力エリアの高さより大きい値 */
+        padding-top: 70px !important; /* ヘッダーの高さより大きい値 */
         padding-left: 10px;
         padding-right: 10px;
         margin-top: 0;
@@ -372,7 +379,17 @@
         -webkit-overflow-scrolling: touch; /* iOSでのスムーズスクロール */
     }
     
-    /* チャットコンテナの調整 */
+    /* 最初のメッセージに特別なスタイルを適用 */
+    .messages-area .message:first-child {
+        margin-top: 10px;
+    }
+    
+    /* 最後のメッセージに特別なマージン */
+    .messages-area .message:last-child {
+        margin-bottom: 20px;
+    }
+    
+    /* スクロール問題に対処するためのコンテナスタイル修正 */
     .chat-container {
         position: relative;
         width: 100%;
@@ -380,6 +397,23 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
+    }
+    
+    /* ヘッダーの高さを調整 */
+    .channel-header {
+        height: 60px;
+    }
+    
+    /* メッセージフォームの位置調整 */
+    .message-form {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--bg-primary);
+        z-index: 10;
+        padding: 15px;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
     }
     
     /* モバイル表示時にサイドバーのアカウントボタンと検索ボタンを非表示 */
@@ -1077,6 +1111,20 @@
     /* PC版ではハンバーガーメニューを非表示 */
     .menu-toggle, .menu-toggle-mobile {
         display: none;
+    }
+}
+
+@media (min-width: 768px) {
+    /* PC版ではメッセージエリアの余白を通常に戻す */
+    .messages-area {
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
+        height: calc(100vh - 60px); /* チャットコンテナ内で適切に表示 */
+    }
+    
+    /* PC版では固定ヘッダーなし */
+    .channel-header {
+        position: relative;
     }
 }
 </style>
