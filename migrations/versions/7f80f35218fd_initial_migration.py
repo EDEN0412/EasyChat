@@ -25,7 +25,6 @@ def upgrade():
     sa.Column('status_message', sa.String(length=255), nullable=True),
     sa.Column('avatar_bg_color', sa.String(length=20), nullable=True),
     sa.Column('avatar_text_color', sa.String(length=20), nullable=True),
-    sa.Column('avatar_url', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
