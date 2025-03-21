@@ -2,52 +2,49 @@
 
 ## テーブル定義
 
-### User (ユーザー)
+### Users
 - PK: user_id VARCHAR(255)
 - username VARCHAR(255) UNIQUE
 - password_hash VARCHAR(255)
 - created_at TIMESTAMP
 - updated_at TIMESTAMP
-- // プロフィール関連
 - status_message VARCHAR(255) NULL
 - avatar_bg_color VARCHAR(20) DEFAULT '#1d9bf0'
 - avatar_text_color VARCHAR(20) DEFAULT '#ffffff'
 
-### Channel (チャンネル)
+### Channels
 - PK: channel_id VARCHAR(255)
 - name VARCHAR(255) NOT NULL
-- FK: created_by VARCHAR(255) -> User.user_id
+- FK: created_by VARCHAR(255) -> Users.user_id
 - created_at TIMESTAMP
 - updated_at TIMESTAMP
 
-### Message (メッセージ)
-- PK: message_id BIGINT
-- FK: channel_id VARCHAR(255) -> Channel.channel_id
-- FK: user_id VARCHAR(255) -> User.user_id
+### Messages
+- PK: message_id VARCHAR(36)
+- FK: channel_id VARCHAR(255) -> Channels.channel_id
+- FK: user_id VARCHAR(255) -> Users.user_id
 - content TEXT NOT NULL
 - is_edited BOOLEAN DEFAULT FALSE
 - created_at TIMESTAMP
 - updated_at TIMESTAMP
-- // 実装予定機能
 - image_url VARCHAR(255) NULL
 
-### Reaction (リアクション)
-- PK, FK: message_id BIGINT -> Message.message_id
-- PK, FK: user_id VARCHAR(255) -> User.user_id
+### Reactions
+- PK, FK: message_id VARCHAR(36) -> Messages.message_id
+- PK, FK: user_id VARCHAR(255) -> Users.user_id
 - PK: emoji VARCHAR(10)
 - created_at TIMESTAMP
-- // 実装予定機能: 絵文字リアクション種類拡充
 
 ## リレーションシップ
 
-1. User -(1)---(多)- Channel
+1. Users -(1)---(多)- Channels
    ユーザーは複数のチャンネルを作成可能
 
-2. Channel -(1)---(多)- Message
+2. Channels -(1)---(多)- Messages
    各チャンネルには複数のメッセージが存在
 
-3. User -(1)---(多)- Message
+3. Users -(1)---(多)- Messages
    ユーザーは複数のメッセージを投稿可能
 
-4. Message -(1)---(多)- Reaction
+4. Messages -(1)---(多)- Reactions
    各メッセージには複数のリアクションが付けられる
