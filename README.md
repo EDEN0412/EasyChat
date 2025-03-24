@@ -282,6 +282,8 @@ https://easychat-frub.onrender.com
     - データベースの構造管理
     - クエリのテストと実行
     - データの可視化と編集
+  - Cursor（AIアシスト機能付きコードエディタ）
+  - Git/GitHub（バージョン管理）
 
 ## ローカルでの動作方法
 

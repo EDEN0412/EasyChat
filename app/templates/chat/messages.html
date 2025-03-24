@@ -2250,8 +2250,6 @@ function hideFlashMessage(element) {
 // WebSocketの接続処理
 socket.on('connect', function() {
     console.log('Socket.IOに接続しました');
-    // チャンネルに参加
-    socket.emit('join', { channel_id: '{{ current_channel.id }}' });
 });
 
 // 接続エラー処理

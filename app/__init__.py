@@ -20,23 +20,6 @@ login_manager.login_view = 'auth.login'
 login_manager.login_message = 'この機能を使用するにはログインが必要です。'
 login_manager.login_message_category = 'info'
 
-# WebSocketイベントハンドラ
-@socketio.on('join')
-def on_join(data):
-    """チャンネルに参加"""
-    if 'channel_id' in data:
-        room = data['channel_id']
-        join_room(room)
-        print(f"ユーザーがチャンネルに参加: {room}")
-
-@socketio.on('leave')
-def on_leave(data):
-    """チャンネルから退出"""
-    if 'channel_id' in data:
-        room = data['channel_id']
-        leave_room(room)
-        print(f"ユーザーがチャンネルから退出: {room}")
-
 def check_auth(username, password):
     """Basic認証のクレデンシャルを確認"""
     return username == os.getenv('BASIC_AUTH_USERNAME') and password == os.getenv('BASIC_AUTH_PASSWORD')

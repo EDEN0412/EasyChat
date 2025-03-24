@@ -318,8 +318,8 @@ def send_message():
         
         # WebSocketでブロードキャスト
         try:
-            socketio.emit('new_message', formatted_message, room=channel_id)
-            print(f"WebSocketでメッセージを送信: room={channel_id}")
+            socketio.emit('new_message', formatted_message)
+            print(f"WebSocketでメッセージを送信")
         except Exception as e:
             print(f"WebSocket送信エラー: {str(e)}")
             print(traceback.format_exc())
@@ -412,7 +412,7 @@ def edit_message(message_id):
             'message_id': message.id,
             'content': message.content,
             'is_edited': message.is_edited
-        }, room=message.channel_id)
+        })
         
         if is_ajax:
             return jsonify({
@@ -463,7 +463,7 @@ def delete_message(message_id):
         # WebSocketでメッセージ削除を通知
         socketio.emit('message_deleted', {
             'message_id': message_id
-        }, room=channel_id)
+        })
         
         if is_ajax:
             return jsonify({'success': True, 'message': 'メッセージを削除しました'})
@@ -502,7 +502,7 @@ def delete_message_api(message_id):
     # WebSocketで削除をブロードキャスト
     socketio.emit('message_deleted', {
         'message_id': message_id
-    }, room=channel_id)
+    })
     
     return jsonify({'message': 'Message deleted successfully'})
 
