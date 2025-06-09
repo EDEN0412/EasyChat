@@ -14,25 +14,18 @@ else:
 
 class Config:
     # Flask設定
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
     
     # データベース設定
     password = os.getenv('MYSQL_PASSWORD', '')
     db_type = os.getenv('DB_TYPE', 'mysql')  # デフォルトはMySQL
     
-    # データベースURIの構築
-    if db_type == 'postgresql':
-        # PostgreSQL用のURI
-        SQLALCHEMY_DATABASE_URI = (
-            f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@"
-            f"{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT', '5432')}/{os.getenv('POSTGRES_DATABASE')}"
-        )
-    else:
-        # MySQL用のURI
-        SQLALCHEMY_DATABASE_URI = (
-            f"mysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@"
-            f"{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DATABASE')}"
-        )
+    # RenderのPostgreSQLデータベース設定
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'sqlite:///' + os.path.join(basedir, 'app.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
