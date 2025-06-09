@@ -37,12 +37,12 @@ class Config:
         'echo_pool': True,  # プールのデバッグログを有効化
     }
     
-    if db_type == 'postgresql':
-        # PostgreSQL固有の設定を追加
+    # DATABASE_URLが存在する場合（Render環境など）、PostgreSQL固有の設定を追加
+    if DATABASE_URL:
         SQLALCHEMY_ENGINE_OPTIONS.update({
             'connect_args': {
-                'connect_timeout': 10,
                 'application_name': 'easychat',
+                # statement_timeoutはミリ秒単位で指定
                 'options': '-c statement_timeout=10000'
             }
         })
