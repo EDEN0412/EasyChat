@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 # 環境変数からテスト環境かどうかを判断
 is_testing = os.environ.get('FLASK_ENV') == 'testing'
 
